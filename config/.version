@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#
+# Application build version
+
+export APP_BUILD="Build 1.1.1 - January 9, 2020"

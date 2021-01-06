@@ -1,0 +1,285 @@
+************************************
+* Production  Release  Information *
+************************************
+Project       : Core Services
+Sub-Project   : Workbench Microservice
+Release Number: 1.7.0
+Build Date    : April 24, 2020
+Url           : https://workbenchms.cloudstaff.com/
+
+
+****************
+* Introduction *
+****************
+
+This document contains the production release notes for Workbench Microservice version 1.7.0 of staging builds 1.7.x
+the following sections describe the release in detail and provide late-breaking or other information that supplements the main documentation.
+
+This is a minor release. Since we have encountered several issues with the prod version
+
+***************
+* What's New  *
+***************
+
+    52907	Feature	Create the Websocket update notifications               Normal
+    52891	Feature	Update the Idle description of the productivity record	Normal
+    52640	Enhancement	Add Gearman Server on Configurations Table	Normal
+    51423	Feature	Assign idle interval for staff                          Normal
+    51417	Feature	Create new endpoint to assign screencapture interval	Normal
+    52534	Enhancement	Refactor complete_clients_records command	Normal
+    52412	Feature	Update Task Category                                    Normal
+    52411	Feature	Add Task Category                                       Normal
+    52409	Feature	Get Task Categories List                                Normal
+
+
+****************
+* Installation *
+****************
+
+--------------
+On Production:
+--------------
+    # --------------------------------------------------------------------------
+    # On your local machine: Launchpad
+    # --------------------------------------------------------------------------
+        #
+        # Prepare your launchpad
+        #
+        # You skip creation of Launchpad if you already have one
+        #
+            mkdir ~/Launchpad
+            cd ~/Launchpad
+            rm -rf workbenchms-prod wbms-prod.log
+        #
+        # Don't forget to replace <username> with your Agileboard username. Also provide
+        # Agileboard user password when prompt.
+        #
+            git clone https://<username>@agileboard.cloudstaff.com/core-services/workbench-microservice/workbench-ms.git  workbenchms-prod
+            cd workbenchms-prod
+
+        # Then produce a log file to check where to start the merge from stage branch
+        # to master branch
+        #
+            git log --stat > ../workbenchms-prod.log
+
+
+        # From wbms-prod.log mark the commit id to be merge with master branch
+        # Check the last staging release notes to be merge with master (use search tool - keyword "release")
+        #
+            commit 871379080462e27eff5305c5c698843c65a1cc63
+            Author: AllanA <allana@cloudstaff.com>
+            Date:   Fri Apr 24 13:07:31 2020 +0800
+
+        #
+        # Let us now create our staging-merge branch. Use the first 6 alphanum of the commit id
+        #
+            git checkout -b staging-merge 871379
+        #
+        # Go and check the logs. The last log should be the commit id that we just grab
+
+        #
+        # Checkout to master branch. To apply the staging-merge branch
+        #
+            git checkout master
+
+        #
+        # Merge staging-merge branch to master branch. Make sure that you are in the master branch!
+        #
+            git merge --no-ff staging-merge
+        #
+        # Check that you have successfully merge staging-merge branch with master branch by checking the logs
+        #
+            git log
+        #
+        # You should see the commit id as the latest log in your master(local) branch
+        #
+
+        #
+        # Let us now push your updates to remote master branch
+        #
+            git push origin master
+        #
+
+        #
+        # Let us now create a Release Branch from our updated master branch
+        # Release Branch tag name format is rc-<build-number>  i.e rc-1.7.0
+        # Finally we push the newly created branch to remote repo
+        #
+            git checkout -b rc-1.7.0
+        #
+            git push origin rc-1.7.0
+        #
+        # Done preparing the release candidate branch
+        #
+
+    # --------------------------------------------------------------------------
+    # On Production Web Servers:
+    # --------------------------------------------------------------------------
+        #
+        # Connect to our Production Bastion server
+        #
+            ssh <username>@54.255.208.33
+        #
+        # After a successful connection to our production bastion server you can now connect to our
+        # Web servers. Connect to web server
+        #
+        #
+        # Instance 1
+        #
+            ssh -i ~/.ssh/coreapp-workbenchms-prod.pem ubuntu@172.0.1.215
+        #
+        #
+        # Go to webroot directory
+            cd /var/www/
+
+        #
+        # Clone the release candidate branch to a new build folder directory
+        # where x.x.x is the build number, incremental number after the previous build, i.e build.1.7.0
+        #
+            sudo git clone -b rc-1.7.0 https://agileboard.cloudstaff.com/core-services/workbench-microservice/workbench-ms.git build.1.7.0
+
+
+        #
+        # You will be prompted to enter your Agileboard credentials and
+        # will start checking out files from our stage branch
+        #
+
+        #
+        # Configure our web-application
+        #
+        # Run composer to install web-application dependencies
+        #
+            cd /var/www/build.1.7.0
+            sudo php composer.phar install
+            sudo php composer.phar install  # we run it twice to ensure all dependencies were install and folder permissions where set
+        #
+        # Next we run the configuration script to set the proper configurations for our
+        # web-application
+        #
+            cd ../
+            sudo ./setup_config
+        #
+        # Will prompt you to enter the current build folder we are working on i.e build.1.7.0
+        # Please enter the correct build-x.x.x folder i.e build.1.7.0
+            build.1.7.0
+        #
+        # Update the Build information
+        #
+            sudo vim build.1.7.0/config/.version
+        #
+        # Update the build information with the following information below. Save and close the file.
+        # Apply the value for APP_BUILD
+        #
+            Version 1.7.0 - April 24, 2020
+
+        #
+        #
+        # Apply the following patch to this release, Use git cherry-pick
+        #
+        # Scan your git logs to see which amongst are needed for applied patch
+        # Used git-cherry-pick to apply patch, Resolve conflicts accordingly
+        #
+        #
+        # cd /var/www/build.1.7.0
+        # sudo git fetch
+        #
+            None
+
+        #
+        #
+        # Update the database if there are any changes, run via cakephp migrations
+        # Ensure that you are now connected to any web-server instance. And execute the migration
+        # command
+        #
+            cd /var/www/build.1.7.0
+            sudo bin/cake migrations migrate
+
+        #
+        #
+        # Activate the new build.X.X.X folder by setting it as "html"
+        # Make sure that you indicate the correct build.X.X.X folder i.e build.1.7.0
+            cd /var/www
+            sudo unlink html; sudo ln -s build.1.7.0 html;
+            sudo service nginx restart; sudo service php7.2-fpm restart
+
+        # ------------------------------------------------------------------------------
+        # NOTIFY qa(s) to begin QA testing on Cloudstaff In/Out Board Staging Env.
+        # ------------------------------------------------------------------------------
+
+--------------
+On Staging:
+--------------
+
+    # --------------------------------------------------------------------------
+    # On Stage (AWS EC2 Instance):
+    # --------------------------------------------------------------------------
+
+
+*****************
+* Rollback Plan *
+*****************
+--------------
+On Production:
+--------------
+
+    # Perform the following items if the rollback was called after QA signed-off:
+    #
+    #
+
+    #
+    # Connect to our Production Bastion server
+    #
+        ssh <username>@54.255.208.33
+    #
+    # Instance 1
+    #
+        ssh -i ~/.ssh/coreapp-workbenchms-prod.pem ubuntu@172.0.1.215
+
+    #
+    # Go to staging directory
+        cd /var/www
+    #
+    # Active the previous build-XX folder since rollback is required. Identify the previous build-XX folder
+        sudo unlink html; sudo ln -s build.1.6.0 html;
+        sudo service nginx restart; sudo service php7.2-fpm restart
+
+
+--------------
+On Staging:
+--------------
+
+
+******************
+* Recent Changes *
+******************
+April 14, 2020
+    52068	Bug	api/get_client_code.json return null value eventhough on db client has short_code/client_code
+    52070	Bug	Add checking on getting POC details (email recipient)
+    52067	Enhancement	Get client_code via api/get_client_code.json and add client_code in getting client details
+    52298	Enhancement	Refactor CompleteClientsRecordsCommand to process client code instead of client name
+    52296	Feature	Create the clien default workbench settings
+    52297	Feature	Save client workbench default settings
+    52299	Support	Migrate data from MyStaff workbench_settings to Workbench MS
+March 26, 2020
+    51412	Enhancement	/api/summary_productivity.json Request date
+    51405	Feature	Create migration script for this new database table workbench_settings
+    51566	Feature	Create the Filler script for Staffs
+    51567	Feature	1. Create the *Filler* script for clients
+
+March 12, 2020
+    51198	Support	Workbench MS Docs > The documentation on Sending Activity Report to Customer is not displayed on API Docs
+    51219	Support	API Docs > Productivity - Add new productivity: Missing 'id' field on Sample Success Response and Error Message Parameter
+    51229	Support	API Docs > Productivity - Request staff productivity: Display the description of the endpoint
+    51230	Support	API Docs > Productivity - Summary productivity of staff: No description and 'summary' field
+
+February 28, 2020
+    50994	Enhancement	Promote the Computation logic for productvities
+    50991	Feature	Create endpoint to send Activity report to Customers
+    50998	Feature	Provide the Token service class
+
+February 13, 2020
+    50712	Enhancement	Return the newly created summary data
+    50522	Support	Include /api/summary_productivity.json on API Docs
+    50519	Support	Productivity - Request staff productivity - Incorrect endpoint was given on API Docs
+
+- EOF -
