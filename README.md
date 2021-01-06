@@ -18,7 +18,7 @@ Workbench microservice cater all API need of Workbench app
 1. Check out or clone our current code base.
 
 ```
-    git clone https://<AB_username>@agileboard.cloudstaff.com/core-services/workbench-microservice/workbench-ms.git <dir_name>
+    git clone  https://<GitHub_username>@github.com/cs-devs/cs-workbench-microservice.git <dir_name>
 ```
 Legend:
     <dir_name> is a folder name you can change this to whatever you like
