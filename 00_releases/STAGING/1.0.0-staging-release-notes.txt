@@ -1,0 +1,201 @@
+*********************************
+* Staging  Release  Information *
+*********************************
+Project       : Core Services
+Sub-Project   : Workbench Microservice
+Release Number: 1.0.0
+Build Date    : 01/31/2020
+Domain        : https://staging-workbenchms.cloudstaff.com
+
+****************
+* Introduction *
+****************
+
+This document contains the staging release notes for Core Services Workbench Microservice build 1.0.0 the following sections describe the
+release in detail and provide late-breaking or other information that supplements the main documentation.
+
+This is a major release.
+
+***************
+* What's New  *
+***************
+    Development release
+
+****************
+* Installation *
+****************
+
+--------------
+On Production:
+--------------
+
+    # --------------------------------------------------------------------------
+    # On Production:
+    # --------------------------------------------------------------------------
+
+--------------
+On Staging:
+--------------
+
+    # --------------------------------------------------------------------------
+    # On Stage (AWS EC2 Instance):
+    # --------------------------------------------------------------------------
+
+        #
+        # Prepare your launchpad
+        #
+        # You skip creation of Launchpad if you already have one
+        #
+            mkdir ~/Launchpad
+            cd ~/Launchpad
+            rm -rf workbench_ms-stage
+        #
+        # Don't forget to replace <username> with your Agileboard username. Also provide
+        # Agileboard user password when prompt.
+        #
+            git clone https://<AB_username>@agileboard.cloudstaff.com/core-services/workbench-microservice/workbench-ms.git workbench_ms-stage
+
+            cd workbench_ms-stage
+        #
+        # Checkout to stage branch
+        #
+            git checkout stage
+        #
+        # Merge development branch to stage branch. Make sure that you are in the stage branch!
+        #
+            git merge development
+        #
+        # Check that you have successfully merge development branch with stage branch by checking the logs
+        # from Agileboard versus your local logs. Then push your updates to stage branch
+        #
+            git push origin stage
+        #
+
+
+        #
+        # Login to staging servers
+        # Hint use coreapp bastion server
+        #
+
+            #
+            # Instance 1
+            #
+                ssh -i ~/.ssh/coreapp-workbenchms-staging.pem ubuntu@10.0.1.191
+
+        #
+        #
+        # Go to staging directory
+            cd /var/www/
+
+        #
+        # Clone stage branch to a new build folder directory
+        # where x.x.x is the build semantic version, usually an incremental number after the previous build, i.e stage-build-x.x.x
+        # Ensure to change <username> with your Agileboard username.
+        #
+            sudo git clone -b stage https://agileboard.cloudstaff.com/core-services/workbench-microservice/workbench-ms.git stage-build-1.0.0
+
+
+        # You will be prompted to enter your sudo password, after hitting enter it will ask for your Agileboard credentials
+        # Will now start checking out files from our working branch
+
+
+        #
+        # Configure our web-application
+        #
+        # Run composer to install web-application dependencies
+        #
+            cd /var/www/stage-build-1.0.0
+            sudo php composer.phar install
+            sudo php composer.phar install  # we run it twice to ensure all dependencies were install and folder permissions where set
+        #
+        # Next we run the configuration script to set the proper configurations for our
+        # web-application
+        #
+            cd ../
+            sudo ./setup_config
+        #
+        # Will prompt you to enter the current build folder we are working on i.e stage-build-1.0.0
+        # Please enter the correct build-x.x.x folder i.e stage-build-1.0.0
+            stage-build-1.0.0
+        #
+        # Update the Build information
+        #
+            sudo vim stage-build-1.0.0/config/.version
+        #
+        # Update the build information with the following information below. Save and close the file.
+        # Apply the value for APP_BUILD
+        #
+            Build 1.0.0 - January 31, 2020
+
+        #
+        # Let us now update our API docs
+        #
+            (Not yet implemented)
+            cd /var/www
+            sudo apidoc -i stage-build-1.0.0/src/Controller/Api -o apidoc
+
+        #
+        #
+        # Apply the following patch to this release, Use git cherry-pick
+        #
+        # Scan your git logs to see which amongst are needed for applied patch
+        # Used git-cherry-pick to apply patch, Resolve conflicts accordingly
+        #
+        #
+        # cd /var/www/stage-build-1.0.0
+        # sudo git fetch
+        #
+            None
+
+        #
+        #
+        # Update the database if there are any changes, run via cakephp migrations
+        # Ensure that you are now connected to any web-server instance. And execute the migration
+        # command
+        #
+            cd /var/www/stage-build-1.0.0
+            sudo bin/cake migrations migrate
+
+        #
+        #
+        # Activate the new staging build folder by setting it as "html"
+        # Make sure that you indicate the correct build folder i.e stage-build-1.0.0
+            cd /var/www
+            sudo unlink html; sudo ln -s stage-build-1.0.0 html;
+            sudo service nginx restart; sudo service php7.2-fpm restart;
+
+        # ------------------------------------------------------------------------------
+        # NOTIFY qa(s) to begin QA testing on Log Central Staging Env.
+        # ------------------------------------------------------------------------------
+
+
+*****************
+* Rollback Plan *
+*****************
+--------------
+On Production:
+--------------
+
+    # Perform the following items if the rollback was called after QA signed-off:
+
+--------------
+On Staging:
+--------------
+
+    # Perform the following items if the rollback was called after QA signed-off:
+
+        # Login to staging server
+            ssh -i ~/.ssh/coreapp-identityserv-staging.pem ubuntu@10.0.0.194
+
+        # Go to staging directory
+            cd /var/www
+
+        # Active the previous build folder since rollback is required. Identify the previous build folder
+            sudo unlink html; sudo ln -s html-org html;
+
+
+******************
+* Recent Changes *
+******************
+
+- EOF -
