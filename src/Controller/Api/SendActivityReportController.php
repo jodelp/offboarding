@@ -77,8 +77,20 @@ class SendActivityReportController extends AppController
             $requestStartDate = date('Y-m-d');
         }
 
+        /**
+         * get StartDate
+         *
+         * Note:
+         * our application is saving information in UTC in order to fetch a PHT date
+         * one must use date coverage for handling the request date, i.e 2020-03-10 PHT is equivalent to
+         * From > 2020-03-09 16:00:00 To > 2020-03-10 15:59:59 in UTC
+         */
+        $start = $this->getStartDate();
+        $end = $this->getEndDate();
+
+
         //compute staff latest summary productivities before sending DAR
-        $summary = $this->summaryProductivitiesTable->computeSummary($this->staffEntity, $requestStartDate, $requestStartDate);
+        $summary = $this->summaryProductivitiesTable->computeSummary($this->staffEntity, $start, $end);
 
         if (!isset($summary['status'])) {
             $this->summaryProductivitiesTable->save($summary);
@@ -295,6 +307,30 @@ class SendActivityReportController extends AppController
             ]);
             return;
         }
+    }
+
+    private function getStartDate()
+    {
+        if (!$this->request->getData('request_date')) {
+          $startDate = new \DateTime('now' ,$this->setDefaultTimezone);
+        } else {
+          $startDate = new \DateTime( $this->request->getData('request_date') ,$this->setDefaultTimezone);
+        }
+        $startDate->setTime(0, 0, 0);
+        $startDate->setTimezone($this->setUTCTimezone);
+        return $startDate->format($this->dateTimeFormat);
+    }
+
+    private function getEndDate()
+    {
+        if (!$this->request->getData('request_date')) {
+          $endDate = new \DateTime('now', $this->setDefaultTimezone);
+        } else {
+          $endDate = new \DateTime($this->request->getData('request_date'), $this->setDefaultTimezone);
+        }
+        $endDate->setTime(23, 59, 59);
+        $endDate->setTimezone($this->setUTCTimezone);
+        return $endDate->format($this->dateTimeFormat);
     }
 
 }

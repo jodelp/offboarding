@@ -188,17 +188,17 @@ class SummaryProductivitiesTable extends Table
                     if(in_array($taskDescription['status'], ['pending', 'in progress'])) {
 
                         if(isset($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'].'{*}working']['interval'])){
-                            $total_time = strtotime($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'].'{*}working']['interval']) + strtotime($interval->format("%H:%I:%S"));    
+                            $total_time = strtotime($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'].'{*}working']['interval']) + strtotime($interval->format("%H:%I:%S"));
 
                         } else {
-                            $total_time = strtotime($interval->format("%H:%I:%S"));    
+                            $total_time = strtotime($interval->format("%H:%I:%S"));
 
                         }
-                        
+
                         $records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}working'] = [
                             'interval'  => date('H:i:s', $total_time),
                             'status'    => $taskDescription['status']
-                        ];    
+                        ];
 
                     } else {
                         $records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}resolved'] = [
@@ -210,7 +210,7 @@ class SummaryProductivitiesTable extends Table
                 } else {
 
                     if($taskDescription['status'] == 'resolved') {
-                            
+
                             $total_time = strtotime($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'].'{*}working']['interval']) + strtotime($interval->format("%H:%I:%S"));
                             unset($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}working']);
 
@@ -233,15 +233,15 @@ class SummaryProductivitiesTable extends Table
                         ];
                     }
 
-                    
+
                 }
 
             }
-            // $endDateInc++;
-            // $startDateInc++;
-            // if (count($taskDescriptions) == $endDateInc ) {
-            //     $endDateInc--;
-            // }
+            $endDateInc++;
+            $startDateInc++;
+            if (count($taskDescriptions) == $endDateInc ) {
+                $endDateInc--;
+            }
 
         }
 
@@ -316,7 +316,7 @@ class SummaryProductivitiesTable extends Table
         $pendingAll = ['pending', 'in progress'];
         if($records) {
             foreach($records as $key => $val) {
-                
+
                 $taskCategory = explode('{*}', $key);
 
                 if ($val['status'] != 'resolved') {
@@ -328,7 +328,7 @@ class SummaryProductivitiesTable extends Table
                     ]);
 
                     $count_pending++;
-                }  
+                }
                 if ($val['status'] == 'resolved') {
                     array_push($allResolvedTasks,  $dataAccomplished = [
                         'task_category' => $taskCategory[0],
@@ -339,7 +339,7 @@ class SummaryProductivitiesTable extends Table
 
                     $count_resolved++;
                 }
-                
+
             }
         }
 
