@@ -38,6 +38,10 @@ class SendActivityReportController extends AppController
         $this->mystaffClientsTable = TableRegistry::getTableLocator()->get('MystaffClients');
         $this->mystaffUsersTable = TableRegistry::getTableLocator()->get('MystaffUsers');
         $this->mystaffSubgroupStaffsTable = TableRegistry::getTableLocator()->get('MystaffSubgroupStaffs');
+
+        $this->dateTimeFormat = 'Y-m-d H:i:s';
+        $this->setDefaultTimezone = new \DateTimeZone('Asia/Manila');
+        $this->setUTCTimezone = new \DateTimeZone('UTC');
     }
 
     /**
