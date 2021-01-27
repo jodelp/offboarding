@@ -6,6 +6,7 @@ use Cake\ORM\RulesChecker;
 use Cake\ORM\Table;
 use Cake\Validation\Validator;
 use Cake\ORM\TableRegistry;
+use Cake\I18n\Date;
 
 /**
  * SummaryProductivities Model
@@ -158,156 +159,86 @@ class SummaryProductivitiesTable extends Table
             ];
 
         }
-        if (count($taskDescriptions) <= 1) {
+        if (count($taskDescriptions) < 1) { // allow first in progress task
           return [
               'status' => 'Error',
               'message' => 'No Working Found',
               '_serialize' => ['status', 'message']
           ];
         }
-        $workingSpent = $working = 0;
-        $workingDescriptions = $workingStatus = [];
-        $startDateInc = 0;
-        $endDateInc = 1;
+
+        $taskData = [];
+        $i = 0;
+        foreach($taskDescriptions as $taskDescription ){ // code rework
+
+                // check if task type is working
+                if (strtolower($taskDescription['type']) == "working") {
+                    // group task by description; add in progress to pending or resolved correspondingly
+                    if($taskDescription['status'] == 'in progress'){ // initial task
+                        // create taskData
+                        $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i] = [
+                            'status' => $taskDescription['status'],
+                            'start'  => $taskDescription['created'],
+                            'end'   => new Date('NOW') // added for first task calc
+                        ];
+                    } else { // add end time and status if pending or resolved
+                        $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i]['end'] = $taskDescription['created'];
+                        $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i]['status'] = $taskDescription['status'];
+                        $i++;
+                    }
+
+                }
+        }
 
         $records = [];
-        foreach ($taskDescriptions as $taskDescription) {
-            $startDate = new \DateTime($taskDescriptions[$startDateInc]['created']->format($dateTimeFormat));
-            $endDate = new \DateTime($taskDescriptions[$endDateInc]['created']->format($dateTimeFormat));
-            $interval = date_diff($startDate, $endDate);
+        $sumSpendTime = [];
+        foreach($taskData as $key => $items){ // loop to format
 
-            if (strtolower($taskDescription['type']) == "working") {
-                // $working = $working + strtotime($interval->format("%H:%I:%S"));
-                // if (!in_array($taskDescription['description'], $workingDescriptions)) {
-                //     array_push($workingDescriptions, [ $taskDescription['task_category'] .'{*}'. $taskDescription['description'] => date('H:i:s', $workingSpent = strtotime($interval->format("%H:%I:%S")))] );
-                //     array_push($workingStatus,[ $taskDescription['task_category'] .'{*}'. $taskDescription['description'] => $taskDescription['status'] ]);
-                // }
+            // check each item per task name
+            foreach($items as $item){
+                // if status is pending
+                if($item['status'] == 'pending'){
+                    $startDate = new \DateTime($item['start']->format($dateTimeFormat));
+                    $endDate = new \DateTime($item['end']->format($dateTimeFormat));
+                    $interval = date_diff($startDate, $endDate);
+                    $pendingTime = strtotime($interval->format("%H:%I:%S"));
+                    $sumSpendTime[] = strtotime($interval->format("%H:%I:%S")); // add to array for resolved spend time if ever its resolved in future.
+                    $records[$key.'{*}working'] = [
+                        'interval'  => date('H:i:s', $pendingTime),
+                        'status'    => $item['status']
+                    ];
+                }
+                // if resolved
+                if($item['status'] == 'resolved'){
+                    $startDate = new \DateTime($item['start']->format($dateTimeFormat));
+                    $endDate = new \DateTime($item['end']->format($dateTimeFormat));
+                    $interval = date_diff($startDate, $endDate);
+                    $sumSpendTime[] = strtotime($interval->format("%H:%I:%S"));
+                    $pendingTime = date('H:i:s',array_sum($sumSpendTime)); // sum up total spend include pending from previous task
 
-                if(!array_key_exists($taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}working' , $records)) {
-
-                    if(in_array($taskDescription['status'], ['pending', 'in progress'])) {
-
-                        if(isset($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'].'{*}working']['interval'])){
-                            $total_time = strtotime($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'].'{*}working']['interval']) + strtotime($interval->format("%H:%I:%S"));
-
-                        } else {
-                            $total_time = strtotime($interval->format("%H:%I:%S"));
-
-                        }
-
-                        $records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}working'] = [
-                            'interval'  => date('H:i:s', $total_time),
-                            'status'    => $taskDescription['status']
-                        ];
-
-                    } else {
-                        $records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}resolved'] = [
-                            'interval'  => date('H:i:s', strtotime($interval->format("%H:%I:%S"))),
-                            'status'    => $taskDescription['status']
-                        ];
-                    }
-
-                } else {
-
-                    if($taskDescription['status'] == 'resolved') {
-
-                            $total_time = strtotime($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'].'{*}working']['interval']) + strtotime($interval->format("%H:%I:%S"));
-                            unset($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}working']);
-
-                            if(isset($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}resolved'])) {
-                                $total_time = strtotime($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}resolved']['interval']) + $total_time;
-                            }
-
-                            $records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}resolved'] = [
-                                'interval'  => date('H:i:s', $total_time),
-                                'status'    => $taskDescription['status']
-                            ];
-
-                    } else {
-                        $total_time = strtotime($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'].'{*}working']['interval']) + strtotime($interval->format("%H:%I:%S"));
-                        unset($records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}working']);
-
-                        $records[$taskDescription['task_category'] .'{*}'. $taskDescription['description'] .'{*}working'] = [
-                            'interval'  => date('H:i:s', $total_time),
-                            'status'    => $taskDescription['status']
-                        ];
-                    }
-
+                    $records[$key.'{*}resolved'] = [
+                        'interval'  => $pendingTime,
+                        'status'    => $item['status']
+                    ];
+                    unset($records[$key.'{*}working']); // remove pending once resolved
 
                 }
 
+                // if first task
+                if($item['status'] == 'in progress'){
+                    $startDate = new \DateTime($item['start']->format($dateTimeFormat));
+                    $endDate = new \DateTime($item['end']->format($dateTimeFormat));
+                    $interval = date_diff($startDate, $endDate);
+                    $pendingTime = strtotime($interval->format("%H:%I:%S"));
+                    $sumSpendTime[] = strtotime($interval->format("%H:%I:%S")); // add to array for resolved spend
+                    $records[$key.'{*}working'] = [
+                        'interval'  => date('H:i:s', $pendingTime),
+                        'status'    => $item['status']
+                    ];
+                }
             }
-            $endDateInc++;
-            $startDateInc++;
-            if (count($taskDescriptions) == $endDateInc ) {
-                $endDateInc--;
-            }
-
+            unset($sumSpendTime); // clean sum array
         }
-
-
-//         $totalAccomplished = $sumStatus = 0;
-//         $resolvedStatus = $pendingStatus = $allpending = $sumWorking = [];
-
-//         foreach ($workingDescriptions as $item) {
-//             $description = key($item);
-//             $summary = current($item);
-//             if(!isset($sumWorking[$description])){
-//                     $sumWorking[$description] = 0;
-//                 }
-//                 $sumWorking[$description] += strtotime($summary);
-
-//         }
-//         $workingDescriptions = $sumWorking;
-
-//         foreach ($workingStatus as $item) {
-//             $description = key($item);
-//             $summary = current($item);
-//             if (array_key_exists($description,$item) && ($item[$description] == "pending")) {
-//                   array_push($pendingStatus, $description);
-//             }
-
-//             if (array_key_exists($description,$item) && $item[$description] == "resolved") {
-//                   array_push($resolvedStatus, $description);
-//             }
-//         }
-
-//         //sort all pending status in resolved
-//         $pendingSame = array_unique($pendingStatus);
-//         $resolveSame = array_unique($resolvedStatus);
-//         $pendingAll = array_diff($pendingSame, $resolvedStatus);
-//         $penDingTask = $accomplishedTask = $pendingTask = [];
-
-//         foreach (array_merge($pendingAll, $resolveSame) as $statusKey) {
-
-//             $taskCategory = explode('{*}', $statusKey);
-
-// //            $task_description = '';
-// //            if (strpos($taskCategory[1], '|') !== false) {
-// //                $data_description = explode('|', $taskCategory[1]);
-// //                $task_description = $data_description[1];
-// //
-// //            } else {
-// //                $task_description = $taskCategory[1];
-// //            }
-
-//             if (in_array($statusKey,$pendingAll)) {
-//               array_push($penDingTask,  $dataPending = [
-//                   'task_category' => $taskCategory[0],
-//                   'name' => $taskCategory[1],
-//                   'spent_time' => date('H:i:s',$workingDescriptions[$statusKey]),
-//                   'constraints' => 0,
-//                 ]);
-//             }
-//             if (in_array($statusKey,$resolveSame)) {
-//               array_push($accomplishedTask,  $dataAccomplished = [
-//                   'task_category' => $taskCategory[0],
-//                   'name' => $taskCategory[1],
-//                   'spent_time' => date('H:i:s',$workingDescriptions[$statusKey]),
-//                   'constraints' => 0,
-//                 ]);
-//             }
-//         }
 
         $count_resolved     = 0;
         $count_pending      = 0;
