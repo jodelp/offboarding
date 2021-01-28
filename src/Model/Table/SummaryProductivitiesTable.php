@@ -167,10 +167,6 @@ class SummaryProductivitiesTable extends Table
           ];
         }
 
-        // echo '<pre>';
-        // print_r($taskDescriptions);
-        // die();
-
         $taskData = [];
         $i = 0;
         foreach($taskDescriptions as $taskDescription ){ // code rework
@@ -183,17 +179,9 @@ class SummaryProductivitiesTable extends Table
                         $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i] = [
                             'status' => $taskDescription['status'],
                             'start'  => $taskDescription['created'],
-                            'end'   => new Date('NOW') // added for first task calc
+                            'end'   => new Date('NOW') // added for in progress task
                         ];
                     } else {
-                        // to make sure that in progress is first to add
-                        if(!isset($taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i]['start'])){
-                            return ['status' => 'Error',
-                                'message' => 'Data status is incorrect',
-                                '_serialize' => ['status', 'message']];
-
-                        }
-
                         // add end time and status if pending or resolved
                         $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i]['end'] = $taskDescription['created'];
                         $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i]['status'] = $taskDescription['status'];
@@ -205,6 +193,7 @@ class SummaryProductivitiesTable extends Table
 
         $records = [];
         $sumSpendTime = [];
+        $pendingTime = [];
         foreach($taskData as $key => $items){ // loop to format
 
             if($items){
@@ -212,47 +201,62 @@ class SummaryProductivitiesTable extends Table
                 foreach($items as $item){
                     // if status is pending
                     if($item['status'] == 'pending'){
-                        $startDate = new \DateTime($item['start']->format($dateTimeFormat));
-                        $endDate = new \DateTime($item['end']->format($dateTimeFormat));
-                        $interval = date_diff($startDate, $endDate);
-                        $pendingTime = strtotime($interval->format("%H:%I:%S"));
-                        $sumSpendTime[] = strtotime($interval->format("%H:%I:%S")); // add to array for resolved spend time if ever its resolved in future.
-                        $records[$key.'{*}working'] = [
-                            'interval'  => date('H:i:s', $pendingTime),
-                            'status'    => $item['status']
-                        ];
+                        if(isset($item['start']) && isset($item['end'])){
+                            $startDate = new \DateTime($item['start']->format($dateTimeFormat));
+                            $endDate = new \DateTime($item['end']->format($dateTimeFormat));
+                            $interval = date_diff($startDate, $endDate);
+                            $pendingTime[] = strtotime($interval->format("%H:%I:%S"));
+                            $sumSpendTime[] = strtotime($interval->format("%H:%I:%S")); // add to array for resolved spend time if ever its resolved in future.
+
+                            $records[$key.'{*}working'] = [
+                                'interval'  => date('H:i:s',array_sum($pendingTime)),
+                                'status'    => $item['status']
+                            ];
+                        }
                     }
                     // if resolved
                     if($item['status'] == 'resolved'){
-                        $startDate = new \DateTime($item['start']->format($dateTimeFormat));
-                        $endDate = new \DateTime($item['end']->format($dateTimeFormat));
-                        $interval = date_diff($startDate, $endDate);
-                        $sumSpendTime[] = strtotime($interval->format("%H:%I:%S"));
-                        $pendingTime = date('H:i:s',array_sum($sumSpendTime)); // sum up total spend include pending from previous task
+                        if(isset($item['start']) && isset($item['end'])){
+                            $startDate = new \DateTime($item['start']->format($dateTimeFormat));
+                            $endDate = new \DateTime($item['end']->format($dateTimeFormat));
+                            $interval = date_diff($startDate, $endDate);
+                            $sumSpendTime[] = strtotime($interval->format("%H:%I:%S"));
+                            $spendTime = date('H:i:s',array_sum($sumSpendTime)); // sum up total spend include pending from previous task
 
-                        $records[$key.'{*}resolved'] = [
-                            'interval'  => $pendingTime,
-                            'status'    => $item['status']
-                        ];
-                        unset($records[$key.'{*}working']); // remove pending once resolved
+                            $records[$key.'{*}resolved'] = [
+                                'interval'  => $spendTime,
+                                'status'    => $item['status']
+                            ];
+                            unset($records[$key.'{*}working']); // remove pending once resolved
+                        }
 
                     }
 
                     // if first task
                     if($item['status'] == 'in progress'){
-                        $startDate = new \DateTime($item['start']->format($dateTimeFormat));
-                        $endDate = new \DateTime($item['end']->format($dateTimeFormat));
-                        $interval = date_diff($startDate, $endDate);
-                        $pendingTime = strtotime($interval->format("%H:%I:%S"));
-                        $sumSpendTime[] = strtotime($interval->format("%H:%I:%S")); // add to array for resolved spend
-                        $records[$key.'{*}working'] = [
-                            'interval'  => date('H:i:s', $pendingTime),
-                            'status'    => $item['status']
-                        ];
+                        if(isset($item['start']) && isset($item['end'])){
+                            $startDate = new \DateTime($item['start']->format($dateTimeFormat));
+                            $endDate = new \DateTime($item['end']->format($dateTimeFormat));
+                            $interval = date_diff($startDate, $endDate);
+                            $pendingTime = strtotime($interval->format("%H:%I:%S"));
+                            $sumSpendTime[] = strtotime($interval->format("%H:%I:%S")); // add to array for resolved spend
+                            $records[$key.'{*}working'] = [
+                                'interval'  => date('H:i:s', $pendingTime),
+                                'status'    => $item['status']
+                            ];
+                        }
                     }
                 }
                 unset($sumSpendTime); // clean sum array
+                unset($pendingTime);
             }
+        }
+        if (empty($records)) { // if empty records was generate, due to incomplete data
+          return [
+              'status' => 'Error',
+              'message' => 'No Working Found',
+              '_serialize' => ['status', 'message']
+          ];
         }
 
         $count_resolved     = 0;
