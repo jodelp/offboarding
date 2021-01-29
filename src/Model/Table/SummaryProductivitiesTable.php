@@ -166,9 +166,12 @@ class SummaryProductivitiesTable extends Table
               '_serialize' => ['status', 'message']
           ];
         }
-
+// echo '<Pre>';
+// print_r($taskDescriptions);
+//die();
         $taskData = [];
         $i = 0;
+        $iStart = 0;
         foreach($taskDescriptions as $taskDescription ){ // code rework
 
                 // check if task type is working
@@ -181,16 +184,19 @@ class SummaryProductivitiesTable extends Table
                             'start'  => $taskDescription['created'],
                             'end'   => new Date('NOW') // added for in progress task
                         ];
+                        $iStart = $i; // Attaching index
                     } else {
                         // add end time and status if pending or resolved
-                        $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i]['end'] = $taskDescription['created'];
-                        $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i]['status'] = $taskDescription['status'];
+                        $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$iStart]['end'] = $taskDescription['created'];
+                        $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$iStart]['status'] = $taskDescription['status'];
                         $i++;
                     }
 
                 }
         }
-
+// echo '<Pre>';
+// print_r($taskData);
+// die();
         $records = [];
         $sumSpendTime = [];
         $pendingTime = [];
@@ -251,6 +257,10 @@ class SummaryProductivitiesTable extends Table
                 unset($pendingTime);
             }
         }
+
+//         echo '<Pre>';
+// print_r($records);
+// die();
         if (empty($records)) { // if empty records was generate, due to incomplete data
           return [
               'status' => 'Error',
