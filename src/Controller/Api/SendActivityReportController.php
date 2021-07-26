@@ -322,6 +322,7 @@ class SendActivityReportController extends AppController
         }
         $startDate->setTime(0, 0, 0);
         $startDate->setTimezone($this->setUTCTimezone);
+
         return $startDate->format($this->dateTimeFormat);
     }
 
@@ -334,6 +335,7 @@ class SendActivityReportController extends AppController
         }
         $endDate->setTime(23, 59, 59);
         $endDate->setTimezone($this->setUTCTimezone);
+
         return $endDate->format($this->dateTimeFormat);
     }
 

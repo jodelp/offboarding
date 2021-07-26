@@ -94,7 +94,7 @@ class ClientsTable extends Table
     public function establish($clientName, $clientCode = null)
     {
         if (!empty($clientCode)) {
-            //client code 
+            //client code
             $entity = $this->find('all')->where(['short_code' => $clientCode])->first();
 
             if (empty($entity)) {
