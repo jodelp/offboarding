@@ -106,7 +106,8 @@ class MystaffStaffsTable extends Table
             ->where([
                 'email' => $username,
                 'client_id' => 0,
-                'cib_user_id' => 0
+                'cib_user_id' => 0,
+                'LOWER(user_status)' => 'active'
             ])
             ->first();
 

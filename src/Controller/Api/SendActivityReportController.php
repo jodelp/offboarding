@@ -189,7 +189,7 @@ class SendActivityReportController extends AppController
             if(!$email_recipient_details || $email_recipient_details == null) {
                 $this->set([
                     'status'     => 'failed',
-                    'message'    => 'Details of DAR email recipient could bot be found.',
+                    'message'    => 'Details of DAR email recipient could not be found.',
                     '_serialize' => ['status', 'message']
                 ]);
 
