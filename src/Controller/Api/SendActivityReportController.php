@@ -136,8 +136,7 @@ class SendActivityReportController extends AppController
             ]);
         }
 
-        //Get client id from MyStaff clients table using client short_code
-        $client_details = $this->mystaffClientsTable->getClientByShortHand($this->clientEntity->short_code);
+        $client_details = $this->mystaffClientEntity;
 
         if(!$client_details) {
             $this->set([
@@ -299,9 +298,29 @@ class SendActivityReportController extends AppController
             return;
         }
 
+        $this->mystaffClientEntity = $this->mystaffClientsTable->getClientByName($this->request->getData('client'));
+
+        if(!$this->mystaffClientEntity) {
+            return [
+                'status' => 'Error',
+                'message' => 'Validation, unable to find client details from Mystaff',
+                '_serialize' => ['status', 'message']
+            ];
+        }
+
+        if(!$this->mystaffClientEntity->shorthand) {
+            return [
+                'status' => 'Error',
+                'message' => 'Validation, client has no shortcode in Mystaff. Please coordinate to System Admin.',
+                '_serialize' => ['status', 'message']
+            ];
+        }
+
         /**
          * establish the client entity
          */
+        $this->clientEntity = $this->clientsTable->establish($this->request->getData('client'), $this->mystaffClientEntity->shorthand);
+
         $this->clientEntity = $this->clientsTable->establish($this->request->getData('client'));
         if (empty($this->clientEntity)) {
             $this->set([
