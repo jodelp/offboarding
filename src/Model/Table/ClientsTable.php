@@ -93,52 +93,78 @@ class ClientsTable extends Table
      */
     public function establish($clientName, $clientCode = null)
     {
-        if (!empty($clientCode)) {
-            //client code
-            $entity = $this->find('all')->where(['short_code' => $clientCode])->first();
+        //client name
+        $client_entity = $this->find('all')->where(['LOWER(name)' => strtolower($clientName)])->first();
+        $entity = false;
+        if($client_entity) {
+            if(!$client_entity->short_code) {
+                if(!empty($clientCode)) {
 
-            if (empty($entity)) {
-                $entity = $this->newEntity(
-                    [
-                        'name' => empty($clientName) ? '' : $clientName,
-                        'short_code' => $clientCode
-                    ],
-                    ['validate' => false]
-                );
+                    $data = [
+                            'short_code' => $clientCode
+                        ];
 
-                try {
-                    $this->saveOrFail($entity);
-                } catch (PersistenceFailedException $ex) {
-                    Log::write(LogLevel::ERROR, 'Encountered while saving new client.');
-                    Log::write(LogLevel::ERROR, 'Payload' . $entity);
-                    Log::write(LogLevel::ERROR, $ex->getMessage());
+                    $entity = $this->patchEntity($client_entity, $data);
 
-                    return null;
+                    try {
+                        $this->saveOrFail($entity);
+                    } catch (PersistenceFailedException $ex) {
+                        Log::write(LogLevel::ERROR, 'Encountered while saving new client.');
+                        Log::write(LogLevel::ERROR, 'Payload' . $entity);
+                        Log::write(LogLevel::ERROR, $ex->getMessage());
+
+                        return null;
+                    }
                 }
             }
         } else {
-            //client name
-            $entity = $this->find('all')->where(['name' => $clientName])->first();
+            if (!empty($clientCode)) {
+                //client code
+                $entity = $this->find('all')->where(['short_code' => $clientCode])->first();
 
-            if (empty($entity)) {
-                $entity = $this->newEntity(
-                    ['name' => $clientName],
-                    ['validate' => false]
-                );
+                if (empty($entity)) {
+                    $entity = $this->newEntity(
+                        [
+                            'name' => empty($clientName) ? '' : $clientName,
+                            'short_code' => $clientCode
+                        ],
+                        ['validate' => false]
+                    );
 
-                try {
-                    $this->saveOrFail($entity);
-                } catch (PersistenceFailedException $ex) {
-                    Log::write(LogLevel::ERROR, 'Encountered while saving new client.');
-                    Log::write(LogLevel::ERROR, 'Payload' . $entity);
-                    Log::write(LogLevel::ERROR, $ex->getMessage());
+                    try {
+                        $this->saveOrFail($entity);
+                    } catch (PersistenceFailedException $ex) {
+                        Log::write(LogLevel::ERROR, 'Encountered while saving new client.');
+                        Log::write(LogLevel::ERROR, 'Payload' . $entity);
+                        Log::write(LogLevel::ERROR, $ex->getMessage());
 
-                    return null;
+                        return null;
+                    }
+                }
+            } else {
+                //client name
+                $entity = $this->find('all')->where(['name' => $clientName])->first();
+
+                if (empty($entity)) {
+                    $entity = $this->newEntity(
+                        ['name' => $clientName],
+                        ['validate' => false]
+                    );
+
+                    try {
+                        $this->saveOrFail($entity);
+                    } catch (PersistenceFailedException $ex) {
+                        Log::write(LogLevel::ERROR, 'Encountered while saving new client.');
+                        Log::write(LogLevel::ERROR, 'Payload' . $entity);
+                        Log::write(LogLevel::ERROR, $ex->getMessage());
+
+                        return null;
+                    }
                 }
             }
         }
 
-        return $entity;
+        return $entity ? $entity : $client_entity;
     }
 
     /**
