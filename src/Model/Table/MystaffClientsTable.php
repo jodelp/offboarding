@@ -120,6 +120,21 @@ class MystaffClientsTable extends Table
     }
 
     /**
+     * Get client details by name
+     * @return entity
+     */
+    public function getClientByName($client_name = null)
+    {
+        $client = $this->find('all')
+            ->where([
+                'LOWER(name)' => strtolower($client_name)
+            ])
+            ->first();
+
+        return $client ? $client : null;
+    }
+
+    /**
      * Get client details by client_id
      * @return entity
      */
