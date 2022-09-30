@@ -116,7 +116,7 @@ Router::prefix('api', function(RouteBuilder $routes) {
     $routes->resources('SendActivityReport');
     $routes->resources('UpdateWbSettings');
     $routes->resources('AddSentEmailStatus');
-
+    $routes->resources('SummaryProductivityReport');
     /**
      * Workbench Settings
      */

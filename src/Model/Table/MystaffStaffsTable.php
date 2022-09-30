@@ -114,4 +114,35 @@ class MystaffStaffsTable extends Table
         return $staff ? $staff : null;
     }
 
+
+    /**
+     * Create or return the entity of the staff
+     * @param string $username
+     * @param boolean $create Flags the creation/addition of none existing staffs
+     * @return Cake\ORM|Entity
+     */
+    public function establish($username, $create = true)
+    {
+        $entity = $this->find('all')->where(['email' => $username])->first();
+
+        /**
+         * add the new user in our dataabase
+         */
+        if (empty($entity) and $create) {
+            $entity = $this->newEntity(['email' => $username]);
+
+            try {
+                $this->saveOrFail($entity);
+            } catch (PersistenceFailedException $ex) {
+                Log::write(LogLevel::ERROR, 'Encountered while saving new staff.');
+                Log::write(LogLevel::ERROR, 'Payload' . $entity);
+                Log::write(LogLevel::ERROR, $ex->getMessage());
+
+                return null;
+            }
+        }
+
+        return $entity;
+    }
+
 }
