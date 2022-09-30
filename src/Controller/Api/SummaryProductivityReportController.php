@@ -45,7 +45,7 @@ class SummaryProductivityReportController extends AppController
 
       /**
        * @api {post} /api/summary_productivity_report.json Summary productivity of staff
-       * @apiName Summary Productivity
+       * @apiName Summary Productivity Report
        * @apiDescription Return the summary productivity of the staff on the indicated request date.
        * @apiGroup Productivity
        * @apiParam {String} username This is the staffs username
