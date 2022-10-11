@@ -275,8 +275,6 @@ class MystaffProductivitiesTable extends Table
                 $ctr++;
         }
         $records = [];
-        $sumSpendTime = [];
-        $pendingTime = [];
         foreach($taskData as $key => $items){ // loop to format
             if($items){
                 // check each item per task name
