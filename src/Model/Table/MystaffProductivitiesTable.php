@@ -263,6 +263,7 @@ class MystaffProductivitiesTable extends Table
                             'duration' => $ctr == 0 || !isset($taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i]) ? $taskDescription['duration'] : $taskData[$taskDescription['task_category'].'{*}'.$taskDescription['description']][$i]['duration'] + $taskDescription['duration']
                         ];
                         $iStart = $i; // Attaching index
+
                     }
                     else {
                         // add end time and status if pending or resolved
@@ -282,33 +283,32 @@ class MystaffProductivitiesTable extends Table
                 foreach($items as $item){
                     // if status is pending
                     if($item['status'] == SELF::PENDING){
-                        $interval = round($item['duration']/60, 2);
+                        $interval = $item['duration']/60;
                         $records[$key.'{*}working'] = [
-                            'interval'  => $interval,
+                            'interval'  =>  (!isset($records[$key.'{*}working']['interval']) ? 0 : $records[$key.'{*}working']['interval']) + $interval,
                             'status'    => $item['status']
                         ];
                     }
                     // if resolved
                     if($item['status'] == SELF::RESOLVED){
-                        $interval = round($item['duration']/60, 2);
+                        $interval = $item['duration']/60;
                         $records[$key.'{*}resolved'] = [
-                            'interval'  => $interval,
+                            'interval'  => ((!isset($records[$key.'{*}resolved']['interval']) ? 0 : $records[$key.'{*}resolved']['interval']) + $interval) + (!isset($records[$key.'{*}working']) ? 0 : $records[$key.'{*}working']['interval']),
                             'status'    => $item['status']
                         ];
                         unset($records[$key.'{*}working']); // remove pending once resolved
+
                     }
 
                     // if first task
                     if($item['status'] == SELF::IN_PROGRESS){
-                        $interval = round($item['duration']/60, 2);
+                        $interval = $item['duration']/60;
                         $records[$key.'{*}working'] = [
-                            'interval'  => $interval,
+                            'interval'  => (!isset($records[$key.'{*}working']['interval']) ? 0 : $records[$key.'{*}working']['interval']) + $interval,
                             'status'    => $item['status']
                         ];
                     }
                 }
-                unset($sumSpendTime); // clean sum array
-                unset($pendingTime);
             }
         }
         if (empty($records)) { // if empty records was generate, due to incomplete data
@@ -332,7 +332,7 @@ class MystaffProductivitiesTable extends Table
                     array_push($allPendingTasks,  $dataPending = [
                         'task_category' => $taskCategory[0],
                         'name' => $taskCategory[1],
-                        'spent_time' => $val['interval'],
+                        'spent_time' => round($val['interval'], 2),
                         'constraints' => 0,
                     ]);
 
@@ -342,7 +342,7 @@ class MystaffProductivitiesTable extends Table
                     array_push($allResolvedTasks,  $dataAccomplished = [
                         'task_category' => $taskCategory[0],
                         'name' => $taskCategory[1],
-                        'spent_time' => $val['interval'],
+                        'spent_time' => round($val['interval'], 2),
                         'constraints' => 0,
                     ]);
 
