@@ -330,7 +330,8 @@ class MystaffProductivitiesTable extends Table
                     array_push($allPendingTasks,  $dataPending = [
                         'task_category' => $taskCategory[0],
                         'name' => $taskCategory[1],
-                        'spent_time' => $this->convertTime(round($val['interval'], 2)),
+                        // 'spent_time' => $this->convertTime(round($val['interval'], 2)),
+                        'spent_time' => round($val['interval'], 2),
                         'constraints' => 0,
                     ]);
 
@@ -340,7 +341,8 @@ class MystaffProductivitiesTable extends Table
                     array_push($allResolvedTasks,  $dataAccomplished = [
                         'task_category' => $taskCategory[0],
                         'name' => $taskCategory[1],
-                        'spent_time' => $this->convertTime(round($val['interval'], 2)),
+                        // 'spent_time' => $this->convertTime(round($val['interval'], 2)),
+                        'spent_time' => round($val['interval'], 2),
                         'constraints' => 0,
                     ]);
 
@@ -365,10 +367,11 @@ class MystaffProductivitiesTable extends Table
 
     private function convertTime($dec)
     {
+
         // start by converting to seconds
-        $seconds = ($dec * 3600);
+        $seconds = ($dec * 60);
         // we're given hours, so let's get those the easy way
-        $hours = floor($dec);
+        if ($seconds >= 3600) $hours = floor($dec);
         // since we've "calculated" hours, let's remove them from the seconds variable
         $seconds -= $hours * 3600;
         // calculate minutes left
@@ -376,7 +379,7 @@ class MystaffProductivitiesTable extends Table
         // remove those from seconds as well
         $seconds -= $minutes * 60;
         // return the time formatted HH:MM:SS
-        return $this->lz($hours).":". $this->lz($minutes).":". $this->lz($seconds);
+        return ($hours ? $this->lz($hours) : "00") . ":". $this->lz($minutes).":".floor($this->lz($seconds));
     }
 
     // lz = leading zero
