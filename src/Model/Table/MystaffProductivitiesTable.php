@@ -379,7 +379,7 @@ class MystaffProductivitiesTable extends Table
         // remove those from seconds as well
         $seconds -= $minutes * 60;
         // return the time formatted HH:MM:SS
-        return ($hours ? $this->lz($hours) : "00") . ":". $this->lz($minutes).":".floor($this->lz($seconds));
+        return ($hours ? $this->lz($hours) : "00") . ":". $this->lz($minutes).":".$this->lz(floor($seconds));
     }
 
     // lz = leading zero
