@@ -330,7 +330,7 @@ class MystaffProductivitiesTable extends Table
                     array_push($allPendingTasks,  $dataPending = [
                         'task_category' => $taskCategory[0],
                         'name' => $taskCategory[1],
-                        'spent_time' => round($val['interval'], 2),
+                        'spent_time' => $this->convertTime(round($val['interval'], 2)),
                         'constraints' => 0,
                     ]);
 
@@ -340,7 +340,7 @@ class MystaffProductivitiesTable extends Table
                     array_push($allResolvedTasks,  $dataAccomplished = [
                         'task_category' => $taskCategory[0],
                         'name' => $taskCategory[1],
-                        'spent_time' => round($val['interval'], 2),
+                        'spent_time' => $this->convertTime(round($val['interval'], 2)),
                         'constraints' => 0,
                     ]);
 
@@ -363,5 +363,26 @@ class MystaffProductivitiesTable extends Table
         return $summaryProductivityEntity;
     }
 
+    private function convertTime($dec)
+    {
+        // start by converting to seconds
+        $seconds = ($dec * 3600);
+        // we're given hours, so let's get those the easy way
+        $hours = floor($dec);
+        // since we've "calculated" hours, let's remove them from the seconds variable
+        $seconds -= $hours * 3600;
+        // calculate minutes left
+        $minutes = floor($seconds / 60);
+        // remove those from seconds as well
+        $seconds -= $minutes * 60;
+        // return the time formatted HH:MM:SS
+        return $this->lz($hours).":". $this->lz($minutes).":". $this->lz($seconds);
+    }
+
+    // lz = leading zero
+    private function lz($num)
+    {
+        return (strlen($num) < 2) ? "0{$num}" : $num;
+    }
 
 }
