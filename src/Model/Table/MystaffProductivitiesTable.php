@@ -331,7 +331,7 @@ class MystaffProductivitiesTable extends Table
                         'task_category' => $taskCategory[0],
                         'name' => $taskCategory[1],
                         // 'spent_time' => $this->convertTime(round($val['interval'], 2)),
-                        'spent_time' => round($val['interval'], 2),
+                        'spent_time' => $this->convertTime(round($val['interval'], 2)),
                         'constraints' => 0,
                     ]);
 
@@ -342,7 +342,7 @@ class MystaffProductivitiesTable extends Table
                         'task_category' => $taskCategory[0],
                         'name' => $taskCategory[1],
                         // 'spent_time' => $this->convertTime(round($val['interval'], 2)),
-                        'spent_time' => round($val['interval'], 2),
+                        'spent_time' => $this->convertTime(round($val['interval'], 2)),
                         'constraints' => 0,
                     ]);
 
