@@ -38,6 +38,7 @@ class SendActivityReportController extends AppController
         $this->mystaffClientsTable = TableRegistry::getTableLocator()->get('MystaffClients');
         $this->mystaffUsersTable = TableRegistry::getTableLocator()->get('MystaffUsers');
         $this->mystaffSubgroupStaffsTable = TableRegistry::getTableLocator()->get('MystaffSubgroupStaffs');
+        $this->mystaffProductivitiesTable = TableRegistry::getTableLocator()->get('MystaffProductivities');
 
         $this->dateTimeFormat = 'Y-m-d H:i:s';
         $this->setDefaultTimezone = new \DateTimeZone('Asia/Manila');
@@ -92,49 +93,35 @@ class SendActivityReportController extends AppController
         $start = $this->getStartDate();
         $end = $this->getEndDate();
 
-
-        //compute staff latest summary productivities before sending DAR
-        $summary = $this->summaryProductivitiesTable->computeSummary($this->staffEntity, $start, $end);
-
-        if (!isset($summary['status'])) {
-            $this->summaryProductivitiesTable->save($summary);
-        }
-
-        //get the staff latest summary productivities
-        $latest_productivities = $this->summaryProductivitiesTable->find()
-            ->where([
-                'staff_id'      => $this->staffEntity->id,
-                'client_id'     => $this->clientEntity->id,
-                'DATE(process_date)' => $requestStartDate
-            ])
-            ->order(['id' => 'desc'])
-            ->first();
-
-//        if(!$latest_productivities) {
-//            $this->set([
-//                'status'     => 'fail',
-//                'message'    => 'Staff has no activity report to be sent.',
-//                '_serialize' => ['status', 'message']
-//            ]);
-//        }
-
-        $username = explode('@', $this->request->getData('username'));
-
-        $staff_first_name = $this->staffEntity->first_name == null ? ucwords($username[0]) : $this->staffEntity->first_name;
-        $staff_last_name = $this->staffEntity->last_name == null ? '' : $this->staffEntity->last_name;
-        $staff_username = $this->staffEntity->username == null ? '' : $this->staffEntity->username;
-
-        //Get staff id from MyStaff staffs table (client id = 0; cib_user_id = 0)
-        $staff_details = $this->mystaffStaffsTable->getStaffByEmail($this->staffEntity->username);
+        //new computation
+        $staff = $this->mystaffStaffsTable->getStaffByEmail($this->request->getData('username'));
 
         //set return message for null staff details or null client_details
-        if(!$staff_details) {
+        if(!$staff) {
             $this->set([
                 'status'     => 'failed',
                 'message'    => 'Unable to find staff\'s details on MyStaff database.',
                 '_serialize' => ['status', 'message']
             ]);
         }
+
+        $summary = $this->mystaffProductivitiesTable->computeSummary($staff, $start, $end);
+
+        $latest_productivities = $summary ? $summary->toArray() : [];
+
+       if(!$latest_productivities) {
+           $this->set([
+               'status'     => 'fail',
+               'message'    => 'Staff has no activity report to be sent.',
+               '_serialize' => ['status', 'message']
+           ]);
+       }
+
+        $username = explode('@', $this->request->getData('username'));
+
+        $staff_first_name = $this->staffEntity->first_name == null ? ucwords($username[0]) : $this->staffEntity->first_name;
+        $staff_last_name = $this->staffEntity->last_name == null ? '' : $this->staffEntity->last_name;
+        $staff_username = $this->staffEntity->username == null ? '' : $this->staffEntity->username;
 
         $client_details = $this->mystaffClientEntity;
 
@@ -147,7 +134,7 @@ class SendActivityReportController extends AppController
         }
 
         //Check if staff is engaged on subgroup in MyStaff subgroup_staff table
-        $subgroup_details = $this->mystaffSubgroupStaffsTable->getStaffSubgroup($staff_details->id);
+        $subgroup_details = $this->mystaffSubgroupStaffsTable->getStaffSubgroup($staff->id);
 
         $client_id = null;
         if($subgroup_details) {
@@ -168,7 +155,7 @@ class SendActivityReportController extends AppController
         }
 
         //Get Email Recipient via Workbench Settings in MyStaff Database using staff_id and client_id
-        $email_recipient_ids = $this->mystaffWorkbenchSettingsTable->getDAREmailRecipient_UserID($staff_details->id, $client_id);
+        $email_recipient_ids = $this->mystaffWorkbenchSettingsTable->getDAREmailRecipient_UserID($staff->id, $client_id);
 
         if(!$email_recipient_ids || $email_recipient_ids->dar_recipients == 0) {
             $this->set([
@@ -209,11 +196,12 @@ class SendActivityReportController extends AppController
                     ],
                     'data' => [
                         'request_date'       => $requestStartDate,
-                        'task_count'         => $latest_productivities->task,
-                        'pending_count'      => $latest_productivities->pending,
-                        'constraint_count'   => $latest_productivities->constraint,
-                        'pending_tasks'      => $latest_productivities->pending_task,
-                        'accomplished_tasks' => $latest_productivities->accomplished_task
+                        'task_count'         => $latest_productivities['task'],
+                        'pending_count'      => $latest_productivities['pending'],
+                        'constraint_count'   => isset($latest_productivities['constraint']) ?
+                            $latest_productivities['constraint'] : 0,
+                        'pending_tasks'      => $latest_productivities['pending_task'],
+                        'accomplished_tasks' => $latest_productivities['accomplished_task']
                     ]
                 ];
 
