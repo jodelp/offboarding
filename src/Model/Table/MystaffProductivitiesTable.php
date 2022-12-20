@@ -281,7 +281,7 @@ class MystaffProductivitiesTable extends Table
                 foreach($items as $item){
                     // if status is pending
                     if($item['status'] == SELF::PENDING){
-                        $interval = $item['duration']/60;
+                        $interval = $item['duration'];
                         $records[$key.'{*}working'] = [
                             'interval'  =>  (!isset($records[$key.'{*}working']['interval']) ? 0 : $records[$key.'{*}working']['interval']) + $interval,
                             'status'    => $item['status']
@@ -289,7 +289,7 @@ class MystaffProductivitiesTable extends Table
                     }
                     // if resolved
                     if($item['status'] == SELF::RESOLVED){
-                        $interval = $item['duration']/60;
+                        $interval = $item['duration'];
                         $records[$key.'{*}resolved'] = [
                             'interval'  => ((!isset($records[$key.'{*}resolved']['interval']) ? 0 : $records[$key.'{*}resolved']['interval']) + $interval) + (!isset($records[$key.'{*}working']) ? 0 : $records[$key.'{*}working']['interval']),
                             'status'    => $item['status']
@@ -300,7 +300,7 @@ class MystaffProductivitiesTable extends Table
 
                     // if first task
                     if($item['status'] == SELF::IN_PROGRESS){
-                        $interval = $item['duration']/60;
+                        $interval = $item['duration'];
                         $records[$key.'{*}working'] = [
                             'interval'  => (!isset($records[$key.'{*}working']['interval']) ? 0 : $records[$key.'{*}working']['interval']) + $interval,
                             'status'    => $item['status']
@@ -331,7 +331,7 @@ class MystaffProductivitiesTable extends Table
                         'task_category' => $taskCategory[0],
                         'name' => $taskCategory[1],
                         // 'spent_time' => $this->convertTime(round($val['interval'], 2)),
-                        'spent_time' => $this->convertTime(round($val['interval'], 2)),
+                        'spent_time' => $this->formatSeconds($val['interval']),
                         'constraints' => 0,
                     ]);
 
@@ -342,7 +342,7 @@ class MystaffProductivitiesTable extends Table
                         'task_category' => $taskCategory[0],
                         'name' => $taskCategory[1],
                         // 'spent_time' => $this->convertTime(round($val['interval'], 2)),
-                        'spent_time' => $this->convertTime(round($val['interval'], 2)),
+                        'spent_time' => $this->formatSeconds($val['interval']),
                         'constraints' => 0,
                     ]);
 
@@ -365,27 +365,14 @@ class MystaffProductivitiesTable extends Table
         return $summaryProductivityEntity;
     }
 
-    private function convertTime($dec)
-    {
-
-        // start by converting to seconds
-        $seconds = ($dec * 60);
-        // we're given hours, so let's get those the easy way
-        if ($seconds >= 3600) $hours = floor($dec);
-        // since we've "calculated" hours, let's remove them from the seconds variable
-        $seconds -= $hours * 3600;
-        // calculate minutes left
-        $minutes = floor($seconds / 60);
-        // remove those from seconds as well
-        $seconds -= $minutes * 60;
-        // return the time formatted HH:MM:SS
-        return ($hours ? $this->lz($hours) : "00") . ":". $this->lz($minutes).":".$this->lz(floor($seconds));
-    }
-
-    // lz = leading zero
-    private function lz($num)
-    {
-        return (strlen($num) < 2) ? "0{$num}" : $num;
+    function formatSeconds($seconds) {
+        $secs = $seconds % 60;
+        $hrs = $seconds / 60;
+        $mins = $hrs % 60;
+        
+        $hrs = $hrs / 60;
+        
+        return ((int)$hrs < 10 ? "0" . (int)$hrs : (int)$hrs) . ":" . ((int)$mins < 10 ? "0" . (int)$mins : (int)$mins) . ":" . ((int)$secs < 10 ? "0" . (int)$secs : (int)$secs);
     }
 
 }
