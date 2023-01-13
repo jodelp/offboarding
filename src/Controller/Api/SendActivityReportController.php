@@ -16,12 +16,36 @@ class SendActivityReportController extends AppController
     private $token;
 
     /**
+     * Start Shift
+     * @var String
+     */
+    private $shift_start;
+
+    /**
+     * End Shift
+     * @var String
+     */
+    private $shift_end;
+
+    /**
+     * Staff Timezone
+     * @var String
+     */
+    private $timezone;
+
+    /**
      * initialize method
      * @return void
      */
     public function initialize(): void
     {
         parent::initialize();
+
+        $this->is_database_conn = $this->isDbUp(['mystaff', 'cs_cib']);
+
+        if($this->is_database_conn != 'success') {
+        $this->dbname = $this->is_database_conn;
+        }
 
         $this->http = new Client();
         $this->token = new Token();
@@ -39,6 +63,8 @@ class SendActivityReportController extends AppController
         $this->mystaffUsersTable = TableRegistry::getTableLocator()->get('MystaffUsers');
         $this->mystaffSubgroupStaffsTable = TableRegistry::getTableLocator()->get('MystaffSubgroupStaffs');
         $this->mystaffProductivitiesTable = TableRegistry::getTableLocator()->get('MystaffProductivities');
+
+        $this->ScShiftsTable = TableRegistry::getTableLocator()->get('SCShifts');
 
         $this->dateTimeFormat = 'Y-m-d H:i:s';
         $this->setDefaultTimezone = new \DateTimeZone('Asia/Manila');
@@ -67,6 +93,16 @@ class SendActivityReportController extends AppController
      */
     public function add()
     {
+        if($this->is_database_conn != 'success') {
+            $response = [
+                'status' => 'Error',
+                'message' => 'Validation, Unable to connect to '. $this->dbname .' Database.',
+                '_serialize' => ['status', 'message']
+            ];
+
+            $this->set($response);
+            return;
+        }
 
         // validate/sanitize the requests params
         $errors = $this->validateRequests();
@@ -94,7 +130,7 @@ class SendActivityReportController extends AppController
         $end = $this->getEndDate();
 
         //new computation
-        $staff = $this->mystaffStaffsTable->getStaffByEmail($this->request->getData('username'));
+        $staff = $this->staff;
 
         //set return message for null staff details or null client_details
         if(!$staff) {
@@ -273,6 +309,8 @@ class SendActivityReportController extends AppController
             ];
         }
 
+        $this->date = trim($this->request->getData('request_date'));
+
         /**
          * establish the staff entity
          */
@@ -284,6 +322,18 @@ class SendActivityReportController extends AppController
                 '_serialize' => ['status', 'message']
             ]);
             return;
+        }
+
+        $this->staff = $this->mystaffStaffsTable->getStaffByEmail($this->request->getData('username'));
+
+        //get staff timezone on given date
+        $staff_details = $this->ScShiftsTable->getShiftDetails($this->staff->id, $this->date);
+
+        if($staff_details) {
+            $shift = explode(' to ',$staff_details['shift']);
+            $this->shift_start = $shift[0];
+            $this->shift_end = $shift[1];
+            $this->timezone = new \DateTimeZone ($staff_details['current_timezone']);
         }
 
         $this->mystaffClientEntity = $this->mystaffClientsTable->getClientByName($this->request->getData('client'));
@@ -322,27 +372,27 @@ class SendActivityReportController extends AppController
 
     private function getStartDate()
     {
-        if (!$this->request->getData('request_date')) {
-          $startDate = new \DateTime('now' ,$this->setDefaultTimezone);
+        if($this->staffEntity) {
+            $startDate = new \DateTime($this->date .' '. $this->shift_start .':00' , $this->timezone);
         } else {
-          $startDate = new \DateTime( $this->request->getData('request_date') ,$this->setDefaultTimezone);
+            $startDate = new \DateTime(trim($this->request->query('date')), $this->setDefaultTimezone);
+            $startDate->setTime(0, 0, 0);
         }
-        $startDate->setTime(0, 0, 0);
-        $startDate->setTimezone($this->setUTCTimezone);
 
+        $startDate->setTimezone($this->setUTCTimezone);
         return $startDate->format($this->dateTimeFormat);
     }
 
     private function getEndDate()
     {
-        if (!$this->request->getData('request_date')) {
-          $endDate = new \DateTime('now', $this->setDefaultTimezone);
+        if($this->staffEntity) {
+            $endDate = new \DateTime($this->date . ' 23:59:59', $this->timezone);
         } else {
-          $endDate = new \DateTime($this->request->getData('request_date'), $this->setDefaultTimezone);
+            $endDate = new \DateTime(trim($this->request->query('date')), $this->setDefaultTimezone);
+            $endDate->setTime(23, 59, 59);
         }
-        $endDate->setTime(23, 59, 59);
-        $endDate->setTimezone($this->setUTCTimezone);
 
+        $endDate->setTimezone($this->setUTCTimezone);
         return $endDate->format($this->dateTimeFormat);
     }
 
