@@ -19,6 +19,7 @@ use Cake\Event\Event;
 use Firebase\JWT\JWT;
 use Cake\Core\Configure;
 use Exception;
+use Cake\Datasource\ConnectionManager;
 
 /**
  * Api Application Controller
@@ -30,6 +31,8 @@ use Exception;
  */
 class AppController extends Controller
 {
+    const CONNECTION_NAMES = ['cs_cib' => 'Staff Central', 'mystaff' => 'Mystaff'];
+
     /**
      * Token
      * @var string
@@ -113,5 +116,23 @@ class AppController extends Controller
     protected function getRealm()
     {
         return $this->token->namespace;
+    }
+
+    public function isDbUp ($db_conn = [])
+    {
+        $status = [];
+        foreach($db_conn as $db_name) {
+            try{
+                $this->db_mystaff_conn = ConnectionManager::get($db_name);
+                $this->db_mystaff_conn->disconnect();
+                $this->db_mystaff_conn->connect();
+            }catch(\Exception $e){
+                $this->log($e->getMessage());
+
+                return $status['fail'] = self::CONNECTION_NAMES[$db_name];
+            }
+        }
+
+        return $status['success'] = 'success';
     }
 }
