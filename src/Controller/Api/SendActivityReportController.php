@@ -16,12 +16,36 @@ class SendActivityReportController extends AppController
     private $token;
 
     /**
+     * Start Shift
+     * @var String
+     */
+    private $shift_start;
+
+    /**
+     * End Shift
+     * @var String
+     */
+    private $shift_end;
+
+    /**
+     * Staff Timezone
+     * @var String
+     */
+    private $timezone;
+
+    /**
      * initialize method
      * @return void
      */
     public function initialize(): void
     {
         parent::initialize();
+
+        $this->is_database_conn = $this->isDbUp(['mystaff', 'cs_cib']);
+
+        if($this->is_database_conn != 'success') {
+        $this->dbname = $this->is_database_conn;
+        }
 
         $this->http = new Client();
         $this->token = new Token();
@@ -38,6 +62,9 @@ class SendActivityReportController extends AppController
         $this->mystaffClientsTable = TableRegistry::getTableLocator()->get('MystaffClients');
         $this->mystaffUsersTable = TableRegistry::getTableLocator()->get('MystaffUsers');
         $this->mystaffSubgroupStaffsTable = TableRegistry::getTableLocator()->get('MystaffSubgroupStaffs');
+        $this->mystaffProductivitiesTable = TableRegistry::getTableLocator()->get('MystaffProductivities');
+
+        $this->ScShiftsTable = TableRegistry::getTableLocator()->get('SCShifts');
 
         $this->dateTimeFormat = 'Y-m-d H:i:s';
         $this->setDefaultTimezone = new \DateTimeZone('Asia/Manila');
@@ -66,6 +93,16 @@ class SendActivityReportController extends AppController
      */
     public function add()
     {
+        if($this->is_database_conn != 'success') {
+            $response = [
+                'status' => 'Error',
+                'message' => 'Validation, Unable to connect to '. $this->dbname .' Database.',
+                '_serialize' => ['status', 'message']
+            ];
+
+            $this->set($response);
+            return;
+        }
 
         // validate/sanitize the requests params
         $errors = $this->validateRequests();
@@ -92,49 +129,35 @@ class SendActivityReportController extends AppController
         $start = $this->getStartDate();
         $end = $this->getEndDate();
 
-
-        //compute staff latest summary productivities before sending DAR
-        $summary = $this->summaryProductivitiesTable->computeSummary($this->staffEntity, $start, $end);
-
-        if (!isset($summary['status'])) {
-            $this->summaryProductivitiesTable->save($summary);
-        }
-
-        //get the staff latest summary productivities
-        $latest_productivities = $this->summaryProductivitiesTable->find()
-            ->where([
-                'staff_id'      => $this->staffEntity->id,
-                'client_id'     => $this->clientEntity->id,
-                'DATE(process_date)' => $requestStartDate
-            ])
-            ->order(['id' => 'desc'])
-            ->first();
-
-//        if(!$latest_productivities) {
-//            $this->set([
-//                'status'     => 'fail',
-//                'message'    => 'Staff has no activity report to be sent.',
-//                '_serialize' => ['status', 'message']
-//            ]);
-//        }
-
-        $username = explode('@', $this->request->getData('username'));
-
-        $staff_first_name = $this->staffEntity->first_name == null ? ucwords($username[0]) : $this->staffEntity->first_name;
-        $staff_last_name = $this->staffEntity->last_name == null ? '' : $this->staffEntity->last_name;
-        $staff_username = $this->staffEntity->username == null ? '' : $this->staffEntity->username;
-
-        //Get staff id from MyStaff staffs table (client id = 0; cib_user_id = 0)
-        $staff_details = $this->mystaffStaffsTable->getStaffByEmail($this->staffEntity->username);
+        //new computation
+        $staff = $this->staff;
 
         //set return message for null staff details or null client_details
-        if(!$staff_details) {
+        if(!$staff) {
             $this->set([
                 'status'     => 'failed',
                 'message'    => 'Unable to find staff\'s details on MyStaff database.',
                 '_serialize' => ['status', 'message']
             ]);
         }
+
+        $summary = $this->mystaffProductivitiesTable->computeSummary($staff, $start, $end);
+
+        $latest_productivities = $summary ? $summary->toArray() : [];
+
+       if(!$latest_productivities) {
+           $this->set([
+               'status'     => 'fail',
+               'message'    => 'Staff has no activity report to be sent.',
+               '_serialize' => ['status', 'message']
+           ]);
+       }
+
+        $username = explode('@', $this->request->getData('username'));
+
+        $staff_first_name = $this->staffEntity->first_name == null ? ucwords($username[0]) : $this->staffEntity->first_name;
+        $staff_last_name = $this->staffEntity->last_name == null ? '' : $this->staffEntity->last_name;
+        $staff_username = $this->staffEntity->username == null ? '' : $this->staffEntity->username;
 
         $client_details = $this->mystaffClientEntity;
 
@@ -147,7 +170,7 @@ class SendActivityReportController extends AppController
         }
 
         //Check if staff is engaged on subgroup in MyStaff subgroup_staff table
-        $subgroup_details = $this->mystaffSubgroupStaffsTable->getStaffSubgroup($staff_details->id);
+        $subgroup_details = $this->mystaffSubgroupStaffsTable->getStaffSubgroup($staff->id);
 
         $client_id = null;
         if($subgroup_details) {
@@ -168,7 +191,7 @@ class SendActivityReportController extends AppController
         }
 
         //Get Email Recipient via Workbench Settings in MyStaff Database using staff_id and client_id
-        $email_recipient_ids = $this->mystaffWorkbenchSettingsTable->getDAREmailRecipient_UserID($staff_details->id, $client_id);
+        $email_recipient_ids = $this->mystaffWorkbenchSettingsTable->getDAREmailRecipient_UserID($staff->id, $client_id);
 
         if(!$email_recipient_ids || $email_recipient_ids->dar_recipients == 0) {
             $this->set([
@@ -209,11 +232,12 @@ class SendActivityReportController extends AppController
                     ],
                     'data' => [
                         'request_date'       => $requestStartDate,
-                        'task_count'         => $latest_productivities->task,
-                        'pending_count'      => $latest_productivities->pending,
-                        'constraint_count'   => $latest_productivities->constraint,
-                        'pending_tasks'      => $latest_productivities->pending_task,
-                        'accomplished_tasks' => $latest_productivities->accomplished_task
+                        'task_count'         => $latest_productivities['task'],
+                        'pending_count'      => $latest_productivities['pending'],
+                        'constraint_count'   => isset($latest_productivities['constraint']) ?
+                            $latest_productivities['constraint'] : 0,
+                        'pending_tasks'      => $latest_productivities['pending_task'],
+                        'accomplished_tasks' => $latest_productivities['accomplished_task']
                     ]
                 ];
 
@@ -285,6 +309,8 @@ class SendActivityReportController extends AppController
             ];
         }
 
+        $this->date = trim($this->request->getData('request_date'));
+
         /**
          * establish the staff entity
          */
@@ -296,6 +322,18 @@ class SendActivityReportController extends AppController
                 '_serialize' => ['status', 'message']
             ]);
             return;
+        }
+
+        $this->staff = $this->mystaffStaffsTable->getStaffByEmail($this->request->getData('username'));
+
+        //get staff timezone on given date
+        $staff_details = $this->ScShiftsTable->getShiftDetails($this->staff->id, $this->date);
+
+        if($staff_details) {
+            $shift = explode(' to ',$staff_details['shift']);
+            $this->shift_start = $shift[0];
+            $this->shift_end = $shift[1];
+            $this->timezone = new \DateTimeZone ($staff_details['current_timezone']);
         }
 
         $this->mystaffClientEntity = $this->mystaffClientsTable->getClientByName($this->request->getData('client'));
@@ -334,27 +372,27 @@ class SendActivityReportController extends AppController
 
     private function getStartDate()
     {
-        if (!$this->request->getData('request_date')) {
-          $startDate = new \DateTime('now' ,$this->setDefaultTimezone);
+        if($this->staffEntity) {
+            $startDate = new \DateTime($this->date .' '. $this->shift_start .':00' , $this->timezone);
         } else {
-          $startDate = new \DateTime( $this->request->getData('request_date') ,$this->setDefaultTimezone);
+            $startDate = new \DateTime(trim($this->request->query('date')), $this->setDefaultTimezone);
+            $startDate->setTime(0, 0, 0);
         }
-        $startDate->setTime(0, 0, 0);
-        $startDate->setTimezone($this->setUTCTimezone);
 
+        $startDate->setTimezone($this->setUTCTimezone);
         return $startDate->format($this->dateTimeFormat);
     }
 
     private function getEndDate()
     {
-        if (!$this->request->getData('request_date')) {
-          $endDate = new \DateTime('now', $this->setDefaultTimezone);
+        if($this->staffEntity) {
+            $endDate = new \DateTime($this->date . ' 23:59:59', $this->timezone);
         } else {
-          $endDate = new \DateTime($this->request->getData('request_date'), $this->setDefaultTimezone);
+            $endDate = new \DateTime(trim($this->request->query('date')), $this->setDefaultTimezone);
+            $endDate->setTime(23, 59, 59);
         }
-        $endDate->setTime(23, 59, 59);
-        $endDate->setTimezone($this->setUTCTimezone);
 
+        $endDate->setTimezone($this->setUTCTimezone);
         return $endDate->format($this->dateTimeFormat);
     }
 
