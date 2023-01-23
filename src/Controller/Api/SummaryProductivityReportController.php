@@ -18,6 +18,23 @@ class SummaryProductivityReportController extends AppController
      */
     private $mystaffStaffsTable;
 
+    /**
+     * Start Shift
+     * @var String
+     */
+    private $shift_start;
+
+    /**
+     * End Shift
+     * @var String
+     */
+    private $shift_end;
+
+    /**
+     * Staff Timezone
+     * @var String
+     */
+    private $timezone;
 
     /**
      * Summary Productivities Table
@@ -34,13 +51,22 @@ class SummaryProductivityReportController extends AppController
       {
           parent::initialize();
 
+          $this->is_database_conn = $this->isDbUp(['mystaff', 'cs_cib']);
+
+          if($this->is_database_conn != 'success') {
+            $this->dbname = $this->is_database_conn;
+          }
+
           $this->mystaffProductivitiesTable = TableRegistry::getTableLocator()->get('MystaffProductivities');
           $this->mystaffStaffsTable = TableRegistry::getTableLocator()->get('MystaffStaffs');
           $this->summaryProductivitiesTable = TableRegistry::getTableLocator()->get('SummaryProductivities');
+          $this->ScShiftsTable = TableRegistry::getTableLocator()->get('SCShifts');
 
           $this->dateTimeFormat = 'Y-m-d H:i:s';
           $this->setDefaultTimezone = new \DateTimeZone('Asia/Manila');
           $this->setUTCTimezone = new \DateTimeZone('UTC');
+
+          $this->required_params = ['username', 'request_date'];
       }
 
       /**
@@ -49,7 +75,7 @@ class SummaryProductivityReportController extends AppController
        * @apiDescription Return the summary productivity of the staff on the indicated request date.
        * @apiGroup Productivity
        * @apiParam {String} username This is the staffs username
-       * @apiParam {String} [request_date] The date request. This date is expected as _**Asia/Manila**_ timezone
+       * @apiParam {String} request_date The date request. This date is expected as _**Asia/Manila**_ timezone
        * @apiSuccess {String} status Status label of your request, either success or error
        * @apiSuccess {String} message Status message
        * @apiSuccess {Array} summary Return the summary productivity of the staff
@@ -90,6 +116,16 @@ class SummaryProductivityReportController extends AppController
        */
     public function add()
     {
+        if($this->is_database_conn != 'success') {
+            $response = [
+                'status' => 'Error',
+                'message' => 'Validation, Unable to connect to '. $this->dbname .' Database.',
+                '_serialize' => ['status', 'message']
+            ];
+
+            $this->set($response);
+            return;
+        }
 
         // validate/sanitize the requests params
         $errors = $this->validateRequests();
@@ -100,15 +136,16 @@ class SummaryProductivityReportController extends AppController
 
          $staff = $this->mystaffStaffsTable->getStaffByEmail($this->request->getData('username'));
         /**
-         * get StartDate
+         * get date period
          *
          * Note:
-         * our application is saving information in UTC in order to fetch a PHT date
-         * one must use date coverage for handling the request date, i.e 2020-03-10 PHT is equivalent to
-         * From > 2020-03-09 16:00:00 To > 2020-03-10 15:59:59 in UTC
+         * our application is saving information in UTC
+         * in order to fetch data accurately, staff timezone on a requested date
+         * must be considered.
          */
         $start = $this->getStartDate();
         $end = $this->getEndDate();
+
         $summary = $this->mystaffProductivitiesTable->computeSummary($staff, $start, $end);
 
         if ($summary['status'] == "Error") {
@@ -152,13 +189,17 @@ class SummaryProductivityReportController extends AppController
      */
     private function validateRequests()
     {
-        if (empty(trim($this->request->getData('username')))) {
-            return [
-                'status' => 'Error',
-                'message' => 'Validation, Staff username cannot be blank',
-                '_serialize' => ['status', 'message']
-            ];
+        foreach($this->required_params as $param) {
+            if (empty(trim($this->request->getData($param)))) {
+                return [
+                    'status' => 'Error',
+                    'message' => 'Validation, '. $param .' is required.',
+                    '_serialize' => ['status', 'message']
+                ];
+            }
         }
+
+        $this->date = trim($this->request->getData('request_date'));
 
         /**
          * establish the staff entity
@@ -172,28 +213,40 @@ class SummaryProductivityReportController extends AppController
             ]);
             return;
         }
+
+        //get staff timezone on given date
+        $staff_details = $this->ScShiftsTable->getShiftDetails($this->staffEntity->id, $this->date);
+
+        if($staff_details) {
+            $shift = explode(' to ',$staff_details['shift']);
+            $this->shift_start = $shift[0];
+            $this->shift_end = $shift[1];
+            $this->timezone = new \DateTimeZone ($staff_details['current_timezone']);
+        }
     }
 
     private function getStartDate()
     {
-        if (!$this->request->getData('request_date')) {
-          $startDate = new \DateTime('now' ,$this->setDefaultTimezone);
+        if($this->staffEntity) {
+            $startDate = new \DateTime($this->date .' '. $this->shift_start .':00' , $this->timezone);
         } else {
-          $startDate = new \DateTime( $this->request->getData('request_date') ,$this->setDefaultTimezone);
+            $startDate = new \DateTime(trim($this->request->query('date')), $this->setDefaultTimezone);
+            $startDate->setTime(0, 0, 0);
         }
-        $startDate->setTime(0, 0, 0);
+
         $startDate->setTimezone($this->setUTCTimezone);
         return $startDate->format($this->dateTimeFormat);
     }
 
     private function getEndDate()
     {
-        if (!$this->request->getData('request_date')) {
-          $endDate = new \DateTime('now', $this->setDefaultTimezone);
+        if($this->staffEntity) {
+            $endDate = new \DateTime($this->date . ' 23:59:59', $this->timezone);
         } else {
-          $endDate = new \DateTime($this->request->getData('request_date'), $this->setDefaultTimezone);
+            $endDate = new \DateTime(trim($this->request->query('date')), $this->setDefaultTimezone);
+            $endDate->setTime(23, 59, 59);
         }
-        $endDate->setTime(23, 59, 59);
+
         $endDate->setTimezone($this->setUTCTimezone);
         return $endDate->format($this->dateTimeFormat);
     }
