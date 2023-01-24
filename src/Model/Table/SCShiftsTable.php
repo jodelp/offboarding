@@ -97,14 +97,14 @@ class SCShiftsTable extends Table
             'date' => $date,
             'user_id' => $userId
             ])
-            ->first();
+            ->last();
 
         if(!$data) {
             $data = $this->find()
                 ->where([
                     'user_id' => $userId
                 ])
-                ->first();
+                ->last();
         }
 
         $record = [];
