@@ -66,7 +66,7 @@ class SummaryProductivityReportController extends AppController
           $this->setDefaultTimezone = new \DateTimeZone('Asia/Manila');
           $this->setUTCTimezone = new \DateTimeZone('UTC');
 
-          $this->required_params = ['username', 'request_date'];
+          $this->required_params = ['username'];
       }
 
       /**
