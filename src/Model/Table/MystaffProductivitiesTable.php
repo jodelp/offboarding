@@ -210,7 +210,7 @@ class MystaffProductivitiesTable extends Table
                     'user_id' => $staff->id
                 ]);
 
-            $client = $clientsTable->find()->where(['client_id' => $productivities->first()['client_id']])->first();
+            $client = $clientsTable->find()->where(['client_id' => $productivities->last()['client_id']])->first();
 
             $summaryProductivityEntity = $summaryProductivitiesTable->newEntity([
                 'staff_id' => $staff->id,
