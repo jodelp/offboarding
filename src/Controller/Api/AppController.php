@@ -32,6 +32,9 @@ use Cake\Datasource\ConnectionManager;
 class AppController extends Controller
 {
     const CONNECTION_NAMES = ['cs_cib' => 'Staff Central', 'mystaff' => 'Mystaff'];
+    const TIMEZONE_CODE_PH = 'PH';
+    const TIMEZONE_CODE_US = 'US';
+    const TIMEZONE_CODE_UK = 'UK';
 
     /**
      * Token
@@ -134,5 +137,45 @@ class AppController extends Controller
         }
 
         return $status['success'] = 'success';
+    }
+
+    public function validateDate($date)
+    {
+        $date_data = explode('-', $date);
+
+        if(count($date_data) < 3) {
+            return false;
+        }
+
+        if(strlen($date_data[0]) != 4) {
+            return false;
+        }
+
+        return checkdate($date_data[1], $date_data[2], $date_data[0]);
+    }
+
+    /**
+     * Return the timezone
+     * @param string $tzCode
+     * @return string
+     */
+    public function setTimezone($tzCode): string
+    {
+        $tz = '';
+
+        switch (strtoupper($tzCode)) {
+            case self::TIMEZONE_CODE_UK:
+                $tz = 'Europe/London';
+                break;
+            case self::TIMEZONE_CODE_US:
+                $tz = 'America/New_York';
+                break;
+            case self::TIMEZONE_CODE_PH:
+            default:
+                $tz = 'Asia/Manila';
+                break;
+        }
+
+        return $tz;
     }
 }

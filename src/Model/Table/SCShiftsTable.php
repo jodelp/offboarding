@@ -69,7 +69,7 @@ class SCShiftsTable extends Table
     {
         $tz = '';
 
-        switch ($tzCode) {
+        switch (strtoupper($tzCode)) {
             case self::TIMEZONE_CODE_UK:
                 $tz = 'Europe/London';
                 break;
