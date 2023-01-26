@@ -70,7 +70,7 @@ class SummaryProductivityReportController extends AppController
           $this->ScStaffsTable = TableRegistry::getTableLocator()->get('SCStaffs');
           $this->ScTimesheetsTable = TableRegistry::getTableLocator()->get('SCTimesheets');
 
-          $this->date = date('Y-m-d H:i:s');
+          $this->date = date('Y-m-d');
           $this->dateTimeFormat = 'Y-m-d H:i:s';
           $this->setDefaultTimezone = new \DateTimeZone('Asia/Manila');
           $this->setUTCTimezone = new \DateTimeZone('UTC');
@@ -243,8 +243,9 @@ class SummaryProductivityReportController extends AppController
             ];
         }
 
+        $user_timezone = $this->setTimezone($staff_sc_details->timezone);
+
         //set date base from staff timezone
-        // $user_timezone = $this->setTimezone($staff_sc_details->timezone);
         // $myDate = new \DateTime(date($this->date));
         // $myDate->setTimezone(new \DateTimeZone($user_timezone));
         // $this->date = $myDate->format('Y-m-d');
