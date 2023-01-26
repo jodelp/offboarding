@@ -212,8 +212,6 @@ class SummaryProductivityReportController extends AppController
             $this->date = trim($this->request->getData('request_date'));
             $valid_date = $this->validateDate($this->date);
 
-            $this->date = $this->date .' 12:00:00';
-
             if(!$valid_date) {
                 return [
                     'status' => 'Error',
@@ -246,10 +244,10 @@ class SummaryProductivityReportController extends AppController
         }
 
         //set date base from staff timezone
-        $user_timezone = $this->setTimezone($staff_sc_details->timezone);
-        $myDate = new \DateTime(date($this->date));
-        $myDate->setTimezone(new \DateTimeZone($user_timezone));
-        $this->date = $myDate->format('Y-m-d');
+        // $user_timezone = $this->setTimezone($staff_sc_details->timezone);
+        // $myDate = new \DateTime(date($this->date));
+        // $myDate->setTimezone(new \DateTimeZone($user_timezone));
+        // $this->date = $myDate->format('Y-m-d');
 
         //get staff timelogs
         $staff_timelogs = $this->ScTimesheetsTable->getTimelogs($staff_sc_details->id, $this->date);
