@@ -243,8 +243,9 @@ class SummaryProductivityReportController extends AppController
             ];
         }
 
+        $user_timezone = $this->setTimezone($staff_sc_details->timezone);
+
         //set date base from staff timezone
-        // $user_timezone = $this->setTimezone($staff_sc_details->timezone);
         // $myDate = new \DateTime(date($this->date));
         // $myDate->setTimezone(new \DateTimeZone($user_timezone));
         // $this->date = $myDate->format('Y-m-d');
