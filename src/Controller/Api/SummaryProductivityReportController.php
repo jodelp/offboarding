@@ -272,6 +272,12 @@ class SummaryProductivityReportController extends AppController
             }
         } else {
 
+            if($staff_details) {
+                $this->timezone = new \DateTimeZone ($staff_details['current_timezone']);
+            } else {
+                $this->timezone = new \DateTimeZone ($user_timezone);
+            }
+
             $time_out = false;
             foreach($staff_timelogs as $log) {
 
@@ -279,9 +285,7 @@ class SummaryProductivityReportController extends AppController
                     $date_time_in = date('Y-m-d H:i:s', strtotime($log['created']));
                     $timelog_in = date('Y-m-d H:i:s', strtotime($date_time_in . '-1 hour'));
                     $this->shift_start = $timelog_in;
-                    $this->timezone = new \DateTimeZone ($user_timezone);
                 }
-
 
                 if(strtolower($log['description']) == 'out') {
                     $date_time_out = date('Y-m-d H:i:s', strtotime($log['created']));
