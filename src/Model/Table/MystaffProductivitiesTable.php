@@ -200,17 +200,40 @@ class MystaffProductivitiesTable extends Table
             ->order(['id' => 'ASC'])
             ->all();
 
-        // if empty productivities
-        if (empty($productivities->toArray())) {
-            return [
-                'status' => 'Error',
-                'message' => 'No Productivity Found',
-                '_serialize' => ['status', 'message']
-            ];
-        }
-
         //get the client id
         $clientsTable = TableRegistry::getTableLocator()->get('MystaffClients');
+
+        // if empty productivities
+        if(empty($productivities->toArray())) {
+            $productivities = $productivitiesTable->find()
+                ->where([
+                    'user_id' => $staff->id
+                ]);
+
+            $client = $clientsTable->find()->where(['client_id' => $productivities->last()['client_id']])->first();
+
+            if(!$client){
+                return [
+                    'status' => 'Error',
+                    'message' => 'No client was found.',
+                    '_serialize' => ['status', 'message']
+                ];
+            }
+
+            $summaryProductivityEntity = $summaryProductivitiesTable->newEntity([
+                'staff_id' => $staff->id,
+                'process_date' => date('Y-m-d',strtotime($endDate)),
+                'client_id' => $client->client_id,
+                'task' => 0,
+                'pending' => 0,
+                'accomplished_task' => null,
+                'pending_task' => null
+            ]);
+            $summaryProductivityEntity['client_name'] = $client->name;
+
+            return $summaryProductivityEntity;
+        }
+
         $client = $clientsTable->find()->where(['client_id' => $productivities->first()['client_id']])->first();
 
         $taskDesciptions= [];
@@ -241,7 +264,7 @@ class MystaffProductivitiesTable extends Table
         if (count($taskDescriptions) < 1) { // allow first in progress task
           return [
               'status' => 'Error',
-              'message' => 'No Working Found',
+              'message' => 'No productivities were found',
               '_serialize' => ['status', 'message']
           ];
         }
@@ -309,10 +332,10 @@ class MystaffProductivitiesTable extends Table
                 }
             }
         }
-        if (empty($records)) { // if empty records was generate, due to incomplete data
+        if (empty($records)) { // if empty records was generated, due to incomplete data
           return [
               'status' => 'Error',
-              'message' => 'No Working Found',
+              'message' => 'No productivities were found',
               '_serialize' => ['status', 'message']
           ];
         }
@@ -369,9 +392,9 @@ class MystaffProductivitiesTable extends Table
         $secs = $seconds % 60;
         $hrs = $seconds / 60;
         $mins = $hrs % 60;
-        
+
         $hrs = $hrs / 60;
-        
+
         return ((int)$hrs < 10 ? "0" . (int)$hrs : (int)$hrs) . ":" . ((int)$mins < 10 ? "0" . (int)$mins : (int)$mins) . ":" . ((int)$secs < 10 ? "0" . (int)$secs : (int)$secs);
     }
 
