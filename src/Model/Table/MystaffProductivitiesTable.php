@@ -212,6 +212,14 @@ class MystaffProductivitiesTable extends Table
 
             $client = $clientsTable->find()->where(['client_id' => $productivities->last()['client_id']])->first();
 
+            if(!$client){
+                return [
+                    'status' => 'Error',
+                    'message' => 'No client was found.',
+                    '_serialize' => ['status', 'message']
+                ];
+            }
+
             $summaryProductivityEntity = $summaryProductivitiesTable->newEntity([
                 'staff_id' => $staff->id,
                 'process_date' => date('Y-m-d',strtotime($endDate)),
@@ -256,7 +264,7 @@ class MystaffProductivitiesTable extends Table
         if (count($taskDescriptions) < 1) { // allow first in progress task
           return [
               'status' => 'Error',
-              'message' => 'No Working Found',
+              'message' => 'No productivities were found',
               '_serialize' => ['status', 'message']
           ];
         }
@@ -324,10 +332,10 @@ class MystaffProductivitiesTable extends Table
                 }
             }
         }
-        if (empty($records)) { // if empty records was generate, due to incomplete data
+        if (empty($records)) { // if empty records was generated, due to incomplete data
           return [
               'status' => 'Error',
-              'message' => 'No Working Found',
+              'message' => 'No productivities were found',
               '_serialize' => ['status', 'message']
           ];
         }

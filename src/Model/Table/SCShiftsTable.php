@@ -6,9 +6,24 @@ use Cake\ORM\TableRegistry;
 
 class SCShiftsTable extends Table
 {
+    const TIMEZONE_CODE_AU_ACT = 'AU-ACT';
+    const TIMEZONE_CODE_AN_NSW = 'AU-NSW';
+    const TIMEZONE_CODE_AU_NT = 'AU-NT';
+    const TIMEZONE_CODE_AU_QLD = 'AU-QLD';
+    const TIMEZONE_CODE_AU_SA = 'AU-SA';
+    const TIMEZONE_CODE_AU_TAS = 'AU-TAS';
+    const TIMEZONE_CODE_AU_VIC = 'AU-VIC';
+    const TIMEZONE_CODE_AU_WA = 'AU-WA';
+    const TIMEZONE_CODE_CA = 'CA';
+    const TIMEZONE_CODE_CN = 'CN';
+    const TIMEZONE_CODE_DE = 'DE';
+    const TIMEZONE_CODE_HK = 'HK';
+    const TIMEZONE_CODE_NZ = 'NZ';
     const TIMEZONE_CODE_PH = 'PH';
-    const TIMEZONE_CODE_US = 'US';
+    const TIMEZONE_CODE_SG = 'SG';
     const TIMEZONE_CODE_UK = 'UK';
+    const TIMEZONE_CODE_US = 'US';
+    const TIMEZONE_CODE_US_NJ = 'US-NJ';
 
 
     public function initialize(array $config): void
@@ -70,13 +85,60 @@ class SCShiftsTable extends Table
         $tz = '';
 
         switch (strtoupper($tzCode)) {
-            case self::TIMEZONE_CODE_UK:
+            case self::TIMEZONE_CODE_AU_ACT;
+                $tz = 'Australia/Lindeman';
+                break;
+            case self::TIMEZONE_CODE_AN_NSW;
+                $tz = 'Australia/Sydney';
+                break;
+            case self::TIMEZONE_CODE_AU_NT;
+                $tz = 'Australia/Darwin';
+                break;
+            case self::TIMEZONE_CODE_AU_QLD;
+                $tz = 'Australia/Brisbane';
+                break;
+            case self::TIMEZONE_CODE_AU_SA;
+                $tz = 'Australia/Adelaide';
+                break;
+            case self::TIMEZONE_CODE_AU_TAS;
+                $tz = 'Australia/Currie ';
+                break;
+            case self::TIMEZONE_CODE_AU_VIC;
+                $tz = 'Australia/Melbourne';
+                break;
+            case self::TIMEZONE_CODE_AU_WA;
+                $tz = 'Australia/Perth';
+                break;
+            case self::TIMEZONE_CODE_CA;
+                $tz = 'America/Toronto';
+                break;
+            case self::TIMEZONE_CODE_CN;
+                $tz = 'Asia/Hong_Kong';
+                break;
+            case self::TIMEZONE_CODE_DE;
+                $tz = 'Europe/Berlin';
+                break;
+            case self::TIMEZONE_CODE_HK;
+                $tz = 'Asia/Hong_Kong';
+                break;
+            case self::TIMEZONE_CODE_NZ;
+                $tz = 'Pacific/Tarawa';
+                break;
+            case self::TIMEZONE_CODE_PH;
+                $tz = 'Asia/Manila';
+                break;
+            case self::TIMEZONE_CODE_SG;
+                $tz = 'Asia/Singapore';
+                break;
+            case self::TIMEZONE_CODE_UK;
                 $tz = 'Europe/London';
                 break;
-            case self::TIMEZONE_CODE_US:
+            case self::TIMEZONE_CODE_US;
                 $tz = 'America/New_York';
                 break;
-            case self::TIMEZONE_CODE_PH:
+            case self::TIMEZONE_CODE_US_NJ;
+                $tz = 'America/New_York';
+                break;
             default:
                 $tz = 'Asia/Manila';
                 break;
