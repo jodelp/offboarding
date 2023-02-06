@@ -37,6 +37,12 @@ class SummaryProductivityReportController extends AppController
     private $timezone;
 
     /**
+     * Staff Entity
+     * @var Object
+     */
+    private $staffEntity;
+
+    /**
      * Summary Productivities Table
      * @var App\Model\Table\SummaryProductivitiesTable
      */
@@ -61,12 +67,15 @@ class SummaryProductivityReportController extends AppController
           $this->mystaffStaffsTable = TableRegistry::getTableLocator()->get('MystaffStaffs');
           $this->summaryProductivitiesTable = TableRegistry::getTableLocator()->get('SummaryProductivities');
           $this->ScShiftsTable = TableRegistry::getTableLocator()->get('SCShifts');
+          $this->ScStaffsTable = TableRegistry::getTableLocator()->get('SCStaffs');
+          $this->ScTimesheetsTable = TableRegistry::getTableLocator()->get('SCTimesheets');
 
+          $this->date = date('Y-m-d');
           $this->dateTimeFormat = 'Y-m-d H:i:s';
           $this->setDefaultTimezone = new \DateTimeZone('Asia/Manila');
           $this->setUTCTimezone = new \DateTimeZone('UTC');
 
-          $this->required_params = ['username', 'request_date'];
+          $this->required_params = ['username'];
       }
 
       /**
@@ -199,36 +208,104 @@ class SummaryProductivityReportController extends AppController
             }
         }
 
-        $this->date = trim($this->request->getData('request_date'));
+        if(!empty(trim($this->request->getData('request_date')))) {
+            $this->date = trim($this->request->getData('request_date'));
+            $valid_date = $this->validateDate($this->date);
+
+            if(!$valid_date) {
+                return [
+                    'status' => 'Error',
+                    'message' => 'Validation, invalid date format or date value. It should be YYYY-MM-DD',
+                    '_serialize' => ['status', 'message']
+                ];
+            }
+        }
+
+        $staff_sc_details = $this->ScStaffsTable->getUserByUsername(trim($this->request->getData('username')));
+
+        if(!$staff_sc_details) {
+            return [
+                'status' => 'Not Found',
+                'message' => 'Username '. $this->request->getData('username') .' not found',
+                '_serialize' => ['status', 'message']
+            ];
+        }
 
         /**
          * establish the staff entity
          */
         $this->staffEntity = $this->mystaffStaffsTable->establish($this->request->getData('username'));
         if (empty($this->staffEntity)) {
-            $this->set([
-                'status' => 'Internal Error Occured',
-                'message' => 'Unable to save record. Error encountered while trying to validate staff username. Please report this incident to Admin.',
+            return [
+                'status' => 'Error',
+                'message' => 'Unable to validate staff username. Internal error encountered.',
                 '_serialize' => ['status', 'message']
-            ]);
-            return;
+            ];
         }
+
+        $user_timezone = $this->setTimezone($staff_sc_details->timezone);
+
+        //set date base from staff timezone
+        // $myDate = new \DateTime(date($this->date));
+        // $myDate->setTimezone(new \DateTimeZone($user_timezone));
+        // $this->date = $myDate->format('Y-m-d');
+
+        //get staff timelogs
+        $staff_timelogs = $this->ScTimesheetsTable->getTimelogs($staff_sc_details->id, $this->date);
 
         //get staff timezone on given date
-        $staff_details = $this->ScShiftsTable->getShiftDetails($this->staffEntity->id, $this->date);
+        $staff_details = $this->ScShiftsTable->getShiftDetails($staff_sc_details->id, $this->date);
 
-        if($staff_details) {
-            $shift = explode(' to ',$staff_details['shift']);
-            $this->shift_start = $shift[0];
-            $this->shift_end = $shift[1];
-            $this->timezone = new \DateTimeZone ($staff_details['current_timezone']);
+        if(!$staff_timelogs) {
+            if($staff_details) {
+                $shift = explode(' to ', $staff_sc_details['shift']);
+                $time_start = explode(':', $shift[0]);
+                $this->shift_start = $this->date .' '. ($time_start[0] - 2) . ':' . $time_start[1] . ':00';
+                $this->shift_end = $this->date . ' 23:59:59';
+                $this->timezone = new \DateTimeZone ($staff_details['current_timezone']);
+            } else {
+                $shift = explode(' to ', $staff_sc_details->shift);
+                $time_start = explode(':', $shift[0]);
+                $this->shift_start = $this->date .' '. ($time_start[0] - 2) . ':' . $time_start[1] . ':00';
+                $this->shift_end = $this->date . ' 23:59:59';
+                $this->timezone = new \DateTimeZone ($user_timezone);
+            }
+        } else {
+
+            if($staff_details) {
+                $this->timezone = new \DateTimeZone ($staff_details['current_timezone']);
+            } else {
+                $this->timezone = new \DateTimeZone ($user_timezone);
+            }
+
+            $time_out = false;
+            foreach($staff_timelogs as $log) {
+
+                if(strtolower($log['description']) == 'in') {
+                    $date_time_in = date('Y-m-d H:i:s', strtotime($log['created']));
+                    $timelog_in = date('Y-m-d H:i:s', strtotime($date_time_in . '-1 hour'));
+                    $this->shift_start = $timelog_in;
+                }
+
+                if(strtolower($log['description']) == 'out') {
+                    $date_time_out = date('Y-m-d H:i:s', strtotime($log['created']));
+                    $timelog_out = date('Y-m-d H:i:s', strtotime($date_time_out . '+1 hour'));
+                    $this->shift_end = $timelog_out;
+                    $time_out = true;
+                }
+            }
+
+            if(!$time_out) {
+                $this->shift_end = date('Y-m-d H:i:s', strtotime($date_time_in . '+20 hour'));
+            }
         }
+
     }
 
     private function getStartDate()
     {
         if($this->staffEntity) {
-            $startDate = new \DateTime($this->date .' '. $this->shift_start .':00' , $this->timezone);
+            $startDate = new \DateTime($this->shift_start, $this->timezone);
         } else {
             $startDate = new \DateTime(trim($this->request->query('date')), $this->setDefaultTimezone);
             $startDate->setTime(0, 0, 0);
@@ -241,7 +318,7 @@ class SummaryProductivityReportController extends AppController
     private function getEndDate()
     {
         if($this->staffEntity) {
-            $endDate = new \DateTime($this->date . ' 23:59:59', $this->timezone);
+            $endDate = new \DateTime($this->shift_end, $this->timezone);
         } else {
             $endDate = new \DateTime(trim($this->request->query('date')), $this->setDefaultTimezone);
             $endDate->setTime(23, 59, 59);
