@@ -377,25 +377,25 @@ return [
             'scopes' => ['queriesLog'],
         ],
 
-        // custom log file for migrations in workbench settings add this to your app.php
+        // custom log file for migrations in offboarding settings add this to your app.php
         'migrationSetting' => [
             'className' => 'Cake\Log\Engine\FileLog',
             'path' => LOGS,
             'levels' => [],
             'scopes' => ['migration'],
-            'file' => 'workbenchSetting',
+            'file' => 'offboardingSetting',
         ],
 
-        // custom log file for migrations in default workbench settings add this to your app.php
+        // custom log file for migrations in default offboarding settings add this to your app.php
         'migrationDefaultSetting' => [
             'className' => 'Cake\Log\Engine\FileLog',
             'path' => LOGS,
             'levels' => [],
             'scopes' => ['migrationDefault'],
-            'file' => 'defaultWorkbenchSetting',
+            'file' => 'defaultOffboardingSetting',
         ],
 
-        // custom log file for migrations in default workbench settings add this to your app.php
+        // custom log file for migrations in default offboarding settings add this to your app.php
         'migrationTaskCategories' => [
             'className' => 'Cake\Log\Engine\FileLog',
             'path' => LOGS,
@@ -404,7 +404,7 @@ return [
             'file' => 'migrationTaskCategories',
         ],
 
-        // custom log file for migrations in default workbench settings add this to your app.php
+        // custom log file for migrations in default offboarding settings add this to your app.php
         'migrationMetrics' => [
             'className' => 'Cake\Log\Engine\FileLog',
             'path' => LOGS,
@@ -413,7 +413,7 @@ return [
             'file' => 'migrationMetrics',
         ],
 
-        // custom log file for migrations in default workbench settings add this to your app.php
+        // custom log file for migrations in default offboarding settings add this to your app.php
         'migrationTasks' => [
             'className' => 'Cake\Log\Engine\FileLog',
             'path' => LOGS,

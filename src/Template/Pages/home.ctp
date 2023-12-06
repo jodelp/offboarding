@@ -6,7 +6,7 @@ $this->layout = false;
 <head>
     <?= $this->Html->charset() ?>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CS Workbench Microservice</title>
+    <title>CS Staff Offboarding</title>
 
   <link href='http://fonts.googleapis.com/css?family=Roboto:5bold' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"/>
@@ -36,7 +36,7 @@ $this->layout = false;
     <div class="landingdiv">
         <div class="landingdiv-body">
             <img src="/img/cslogo.png" style="margin-bottom:20px" alt="Cloustaff Logo" />
-            <h1 class="landingdiv-heading" style="color: #0088d1; font-size:36px">Workbench Services</h1><br>
+            <h1 class="landingdiv-heading" style="color: #0088d1; font-size:36px">CS Staff Offboarding</h1><br>
             <!-- <a class="btn btn-primary btn-sm" href="/admin" role="button" aria-pressed="true">LOG-IN</a> -->
         </div>
         <div class="landingdiv-footer" style="display: inline-block; ">

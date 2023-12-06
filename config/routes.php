@@ -111,49 +111,8 @@ Router::prefix('api', function(RouteBuilder $routes) {
     $routes->setExtensions(['json']);
 
     $routes->resources('Productivity');
-    $routes->resources('GetProductivity');
-    $routes->resources('SummaryProductivity');
-    $routes->resources('SendActivityReport');
-    $routes->resources('UpdateWbSettings');
-    $routes->resources('AddSentEmailStatus');
-    $routes->resources('SummaryProductivityReport');
-    /**
-     * Workbench Settings
-     */
-    $routes->resources('ClientsWorkbenchSettings');
-    $routes->post('/clients/workbench_settings', ['controller' => 'ClientsWorkbenchSettings', 'action' => 'add']);
+        
     $routes->post('/settings/get', ['controller' => 'GetSettings', 'action' => 'add']);
-    $routes->resources('IdleInterval');
-    $routes->resources('ScreencaptureInterval');
-
-    /**
-     * Task Categories
-     */
-     $routes->post('/task_categories/add', ['controller' => 'TaskCategoriesAdd', 'action' => 'add']);
-     $routes->post('/task_categories/update', ['controller' => 'TaskCategoriesUpdate', 'action' => 'add']);
-     $routes->get('/task_categories/list', ['controller' => 'TaskCategoriesList', 'action' => 'index']);
-
-     /**
-      * Productivities
-      */
-     $routes->post('/productivities/idle_update', ['controller' => 'IdleProductivity', 'action' => 'add']);
-
-     /**
-      * Metrics
-      */
-     $routes->post('/metrics/add', ['controller' => 'MetricsAdd', 'action' => 'add']);
-     $routes->post('/metrics/remove', ['controller' => 'MetricsRemove', 'action' => 'add']);
-     $routes->post('/metrics/update', ['controller' => 'MetricsUpdate', 'action' => 'add']);
-     $routes->get('/metrics/list', ['controller' => 'MetricsList', 'action' => 'index']);
-
-     /**
-      * Tasks
-      */
-      $routes->post('/tasks/add', ['controller' => 'TasksAdd', 'action' => 'add']);
-      $routes->post('/tasks/remove', ['controller' => 'TasksRemove', 'action' => 'add']);
-      $routes->post('/tasks/update', ['controller' => 'TasksUpdate', 'action' => 'add']);
-      $routes->post('/tasks/list', ['controller' => 'TasksList', 'action' => 'add']);
-
-
+    
     $routes->fallbacks('InflectedRoute');
 });
