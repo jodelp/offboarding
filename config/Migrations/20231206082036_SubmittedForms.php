@@ -12,7 +12,7 @@ class SubmittedForms extends AbstractMigration
      */
     public function change()
     {
-        $table = $this->table('subitted_forms');
+        $table = $this->table('submitted_forms');
         $table
             ->addColumn('user_id', 'string', [
                 'default' => null,
