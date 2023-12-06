@@ -14,8 +14,8 @@ class Forms extends AbstractMigration
     {
         $table = $this->table('forms');
         $table
-            ->addColumn('department_id', 'string', [
-                'default' => null,
+            ->addColumn('department_id', 'integer', [
+                'default' => 0,
             ])
             ->addColumn('name', 'string', [
                 'default' => null,

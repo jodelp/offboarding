@@ -20,7 +20,7 @@ class Users extends AbstractMigration
             ->addColumn('employee_id', 'string', [
                 'default' => null,
             ])
-            ->addColumn('first_name', 'integer', [
+            ->addColumn('first_name', 'string', [
                 'default' => null,
             ])
             ->addColumn('last_name', 'string', [
@@ -28,30 +28,37 @@ class Users extends AbstractMigration
             ])
             ->addColumn('designation', 'string', [
                 'default' => null,
+                'null' => true
             ])
             ->addColumn('client_name', 'string', [
                 'default' => null,
             ])
             ->addColumn('department', 'string', [
                 'default' => null,
+                'null' => true
             ])
             ->addColumn('date_filed', 'datetime', [
                 'default' => null,
+                'null' => true
             ])
             ->addColumn('training_date', 'datetime', [
                 'default' => null,
+                'null' => true
             ])
             ->addColumn('start_date', 'datetime', [
                 'default' => null,
+                'null' => true
             ])
             ->addColumn('status', 'string', [
                 'default' => null,
+                'null' => true
             ])
             ->addColumn('role', 'string', [
                 'default' => null,
             ])
             ->addColumn('otp', 'string', [
                 'default' => null,
+                'null' => true
             ])
             ->addColumn('created', 'datetime', [
                 'default' => 'CURRENT_TIMESTAMP',
