@@ -1,0 +1,45 @@
+
+/* Device Per View Responsive Styling */
+@media screen and (max-width: 1440px) {
+    .slick-next {right: -60px;}
+    .slick-prev {left: -60px;}
+}
+
+/* iPad Pro 1024 x 1366 */
+@media screen and (max-width: 1366px) {
+    .hero-section {height: 40vh;} 
+    .slick-next, .slick-prev {display: none !important;} 
+    #cta-animation {bottom: -300px;}
+}
+/* iPad Air 820 x 1180 */
+@media screen and (max-width: 1180px) {
+    .hero-section {height: 55vh;}
+    .button-group {flex-direction: column;gap: 10px;}
+    #cta-animation {bottom: -350px;}
+}
+
+/* iPad Mini 768 x 1024 */
+@media screen and (max-width: 1024px) {
+    .hero-section .row { flex-direction: column-reverse; }
+    .hero-section { height: auto; padding-top: calc(var(--regular) * .25px); } 
+    .hero-section .row .col-md-6 { width: 100%; } #cta-animation { position: static; height: auto; } 
+    .cta-section .col-lg-6 { height: auto; } 
+    .cta-section .col-lg-6.bg-blue { border-top-right-radius: 0; border-bottom-left-radius: 80px; }
+    .feature-section .s-subheading {max-width: 100%; margin-bottom: 1.5rem;}
+    #cloudstaffer-slider .card-title {font-size: 18px;}
+    .certications { width: 65%; }
+}
+
+/* iPhone 14 430 x 932 */
+@media screen and (max-width: 430px) {
+    .header button { display: none; } 
+    .header .logo { width: 100%; } 
+    .hero-section h1 { font-size: 50px; margin-top: 30px; } 
+    section .s-subheading {font-size: 40px;}
+    .img-button-group img { width: 100%; } 
+    .img-button-group { gap: 10px; justify-content: space-around; } 
+    .benefit-section .hiring { border-radius: 0; padding: 40px; } 
+    .cta-section .shadow-boxed, .cta-section .col-lg-6.bg-blue { border-radius: 0; } 
+    .cta-section .col-lg-6 {padding: 40px;} .cta-section {padding-bottom: 0;} 
+    #cloudstaffer-slider .card-title { font-size: 30px !important; }
+}
