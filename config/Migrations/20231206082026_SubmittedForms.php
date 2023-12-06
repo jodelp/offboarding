@@ -26,7 +26,7 @@ class SubmittedForms extends AbstractMigration
             ->addColumn('status', 'string', [
                 'default' => null,
             ])
-            ->addColumn('remarks', 'string', [
+            ->addColumn('remarks', 'text', [
                 'default' => null,
             ])
             ->addColumn('assessed_by', 'string', [
