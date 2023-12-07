@@ -130,6 +130,7 @@ class UsersController extends AppController
 
     public function login()
     {
+        $this->viewBuilder()->autoLayout(false);
         if ($this->request->is('post')) {
             $username = $this->request->getData('username');
             $otp = $this->request->getData('otp');
@@ -140,19 +141,22 @@ class UsersController extends AppController
                 ]
             ])->first();
 
-            $getRole = $user->role;
             if ($user) {
-                $this->Auth->setUser($user);
-                if ($getRole == 'admin') {
+                // $this->Auth->setUser($user);
+                if ($user->role == 'admin') {
                     return $this->redirect(['controller' => 'forms', 'action' => 'index']);
-                } else  if ($getRole == 'poc') {
+                } else  if ($user->role == 'poc') {
                     return $this->redirect(['controller' => 'forms', 'action' => 'index']);
-                } else if ($getRole == 'staff') {
+                } else if ($user->role == 'staff') {
                     return $this->redirect(['controller' => 'forms', 'action' => 'index', $user->employee_id]);
+                } else {
+                    $this->Flash->error('Login Failed');
                 }
             }
             $this->Flash->error('Login Failed');
         }
+
+        return $this -> render('/Users/signup');
     }
 
     public function generateOtp()
@@ -170,6 +174,8 @@ class UsersController extends AppController
     public function logout()
     {
         $this->Flash->success('You are now logged out.');
-        return $this->redirect($this->Auth->logout());
+        return $this->redirect(['controller' => 'users', 'action' => 'signup']);
+        // return redirect ($this->Auth->logout());
+        // return $this->redirect($this->Auth->logout());
     }
 }

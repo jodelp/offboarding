@@ -36,7 +36,7 @@
                                 </p>
                                 <p> 
                                     <label for="otp" class="yourotp"> Password </label>
-                                    <input id="otp" name="otp" required="required" type="text" placeholder="OTP / Password" /> 
+                                    <input id="otp" name="otp" required="required" type="password" placeholder="OTP / Password" /> 
                                 </p>
                                 <p class="signin button"> 
                                     <button type="submit" class="btn btn-primary-round tx-white" id="sendOTP">Login</button> 
