@@ -64,7 +64,17 @@ Router::scope('/', function (RouteBuilder $routes) {
      */
     $routes->connect('/', ['controller' => 'users', 'action' => 'signup']);
     // $routes->connect('/', ['controller' => 'forms', 'action' => 'index']);
-
+    Router::plugin(
+        'App',
+        ['path' => '/app'],
+        function (RouteBuilder $routes) {
+            $routes->fallbacks(DashedRoute::class);
+        }
+    );
+    
+    Router::scope('/', function (RouteBuilder $routes) {
+        $routes->connect('/chat', ['controller' => 'Chat', 'action' => 'chat']);
+    });
     /**
      * ...and connect the rest of 'Pages' controller's URLs.
      */
