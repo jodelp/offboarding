@@ -16,6 +16,7 @@ namespace App\Controller;
 
 use Cake\Controller\Controller;
 use Cake\Event\Event;
+Use Cake\Network\Email\Email;
 
 /**
  * Application Controller
@@ -45,6 +46,17 @@ class AppController extends Controller
             'enableBeforeRedirect' => false,
         ]);
         $this->loadComponent('Flash');
+        $this->loadComponent('Auth', [
+            'loginAction'=> [
+                'controller' => 'Users',
+                'action'=>'login'
+            ],
+            'logoutRedirect'=>[
+                'controller'=>'Users',
+                'action'=>'login'
+            ],
+            'storage'=>'Session'
+        ]);
         
         $buildVersion = env('APP_BUILD', null);
         $this->set(compact('buildVersion'));
@@ -53,5 +65,26 @@ class AppController extends Controller
          * see https://book.cakephp.org/3.0/en/controllers/components/security.html
          */
         //$this->loadComponent('Security');
+    }
+
+    public function sendOtp($userEmail, $otp)
+    {
+        $email = new Email();
+        $email->transport('gmail')
+        ->from(['osh.committee@cloudstaff.com' => 'OffBoarding System'])
+        ->to($userEmail)
+        ->subject('Staff Offboarding OTP')
+        ->emailFormat('html');
+
+        $email->viewVars([
+            'user_email' => $userEmail,
+            'otp' => $otp
+        ])->template('test');
+
+        if ($email->send()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

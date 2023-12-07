@@ -102,4 +102,74 @@ class UsersController extends AppController
 
         return $this->redirect(['action' => 'index']);
     }
+
+    public function signup()
+    {
+        $this->viewBuilder()->autoLayout(false);
+        $user = $this->Users->newEntity();
+        if ($this->request->is('post')) {
+            $user = $this->Users->patchEntity($user, $this->request->getData());
+            //check if user exists
+            $user->username = $this->request->getData('username');
+            $user->employee_id = $this->request->getData('employee_id');
+            $user->first_name = 'test';
+            $user->last_name = 'test';
+            $user->client_name = 'test';
+            $user->role = 'staff';
+            $user->otp = $this->generateOtp();
+
+            if ($this->Users->save($user)) {
+                $this->sendOtp($user->username, $user->otp);
+                $this->Flash->success(__('We\'ve sent you an email with your OTP code .'));
+                return $this->redirect(['action' => 'signup']);
+            }
+            $this->Flash->error(__('Unable to send OTP Code. Please, try again.'));
+        }
+        $this->set(compact('user'));
+    }
+
+    public function login()
+    {
+        if ($this->request->is('post')) {
+            $username = $this->request->getData('username');
+            $otp = $this->request->getData('otp');
+            $user = $this->Users->find('all', [
+                'conditions' => [
+                    'username' => $username,
+                    'otp' => $otp
+                ]
+            ])->first();
+
+            $getRole = $user->role;
+            if ($user) {
+                $this->Auth->setUser($user);
+                if ($getRole == 'admin') {
+                    return $this->redirect(['controller' => 'forms', 'action' => 'index']);
+                } else  if ($getRole == 'poc') {
+                    return $this->redirect(['controller' => 'forms', 'action' => 'index']);
+                } else if ($getRole == 'staff') {
+                    return $this->redirect(['controller' => 'forms', 'action' => 'index', $user->employee_id]);
+                }
+            }
+            $this->Flash->error('Login Failed');
+        }
+    }
+
+    public function generateOtp()
+    {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $randomString = '';
+        $length = 6;
+        for ($i = 0; $i < $length; $i++) {
+            $randomString .= $characters[rand(0, strlen($characters) - 1)];
+        }
+    
+        return $randomString; 
+    }
+
+    public function logout()
+    {
+        $this->Flash->success('You are now logged out.');
+        return $this->redirect($this->Auth->logout());
+    }
 }
