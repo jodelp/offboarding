@@ -2,7 +2,7 @@
 namespace App\Controller;
 
 use App\Controller\AppController;
-
+use Cake\Event\Event;
 /**
  * Users Controller
  *
@@ -11,6 +11,14 @@ use App\Controller\AppController;
  */
 class UsersController extends AppController
 {
+
+    public function beforeFilter(Event $event)
+    {
+        parent::beforeFilter($event);
+        // allow only login, forgotpassword
+         $this->Auth->allow(['signup']);
+    }
+
     /**
      * Index method
      *
@@ -142,13 +150,11 @@ class UsersController extends AppController
             ])->first();
 
             if ($user) {
-                // $this->Auth->setUser($user);
-                if ($user->role == 'admin') {
-                    return $this->redirect(['controller' => 'forms', 'action' => 'index']);
-                } else  if ($user->role == 'poc') {
-                    return $this->redirect(['controller' => 'forms', 'action' => 'index']);
+                $this->Auth->setUser($user);
+                if ($user->role == 'admin' || $user->role == 'poc') {
+                    return $this->redirect(['controller' => 'forms', 'action' => 'list']);
                 } else if ($user->role == 'staff') {
-                    return $this->redirect(['controller' => 'forms', 'action' => 'index', $user->employee_id]);
+                    return $this->redirect(['controller' => 'forms', 'action' => 'index', $user->id]);
                 } else {
                     $this->Flash->error('Login Failed');
                 }
@@ -174,8 +180,8 @@ class UsersController extends AppController
     public function logout()
     {
         $this->Flash->success('You are now logged out.');
-        return $this->redirect(['controller' => 'users', 'action' => 'signup']);
-        // return redirect ($this->Auth->logout());
+        // return $this->redirect(['controller' => 'users', 'action' => 'signup']);
+        return $this->redirect($this->Auth->logout());
         // return $this->redirect($this->Auth->logout());
     }
 }

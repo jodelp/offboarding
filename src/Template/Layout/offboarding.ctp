@@ -153,23 +153,45 @@
 <header data-bs-theme="dark">
   <div class="navbar navbar-dark bg-dark shadow-sm">
     <div class="container">
-      <a href="#" class="navbar-brand d-flex align-items-center">
-        <strong>Cloudstaff Offboarding</strong>
-      </a>
+      <?=
+      $this->Html->link(
+          'Cloudstaff Offboarding',
+          '/forms/list',
+          ['class' => 'navbar-brand d-flex align-items-center']
+      );
+
+      ?>
+      <?=
+      $this->Html->link(
+        'Logout',
+        '/users/logout',
+        ['class' => 'btn btn-link text-end',]
+      );
+      ?>
     </div>
   </div>
 </header>
 
 <main>
+  <div class="container">
+    <div class="grid">
+      <div class="g-col-12">
+        <br>
+        <h3>
+          Welcome, <?= ucwords($loggedinUser['first_name']) ?>
+        </h3>
+      </div>
+    </div>
+  </div>
   <?= $this->Flash->render() ?>
 	<?= $this->fetch('content') ?>
 </main>
 
 <footer class="text-body-secondary py-5">
   <div class="container">
-    <p class="float-end mb-1">
+    <!-- <p class="float-end mb-1">
       <a href="#">Back to top</a>
-    </p>
+    </p> -->
   </div>
 </footer>
 	</body>

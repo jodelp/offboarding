@@ -40,6 +40,10 @@ class SubFormsTable extends Table
         $this->hasOne('SubmittedForms', [
             'foreignKey' => 'subform_id',
         ]);
+
+        $this->hasOne('Users', [
+            'foreignKey' => 'id',
+        ]);
     }
 
 }

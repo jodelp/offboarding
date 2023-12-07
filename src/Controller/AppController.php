@@ -16,8 +16,7 @@ namespace App\Controller;
 
 use Cake\Controller\Controller;
 use Cake\Event\Event;
-Use Cake\Network\Email\Email;
-
+use Cake\Network\Email\Email;
 /**
  * Application Controller
  *
@@ -46,17 +45,17 @@ class AppController extends Controller
             'enableBeforeRedirect' => false,
         ]);
         $this->loadComponent('Flash');
-        // $this->loadComponent('Auth', [
-        //     'loginAction'=> [
-        //         'controller' => 'Users',
-        //         'action'=>'login'
-        //     ],
-        //     'logoutRedirect'=>[
-        //         'controller'=>'Users',
-        //         'action'=>'login'
-        //     ],
-        //     'storage'=>'Session'
-        // ]);
+        $this->loadComponent('Auth', [
+            'loginAction'=> [
+                'controller' => 'Users',
+                'action'=>'login'
+            ],
+            'logoutRedirect'=>[
+                'controller'=>'Users',
+                'action'=>'login'
+            ],
+            'storage'=>'Session'
+        ]);
         
         $buildVersion = env('APP_BUILD', null);
         $this->set(compact('buildVersion'));
@@ -65,6 +64,14 @@ class AppController extends Controller
          * see https://book.cakephp.org/3.0/en/controllers/components/security.html
          */
         //$this->loadComponent('Security');
+    }
+
+    public function beforeRender(\Cake\Event\Event $event) {
+        $loggedinUser = [];
+        if($this->Auth->user()) {
+            $loggedinUser = $this->Auth->user();
+        }
+        $this->set('loggedinUser', $loggedinUser);
     }
 
     public function sendOtp($userEmail, $otp)

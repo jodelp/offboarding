@@ -36,6 +36,11 @@ class SubmittedFormsTable extends Table
         parent::initialize($config);
 
         $this->setTable('submitted_forms');
+        $this->setDisplayField('id');
+        $this->setPrimaryKey('id');
+
+        $this->belongsTo('Pocs');
+       
     }
 
 }
