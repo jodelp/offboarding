@@ -87,4 +87,25 @@ class AppController extends Controller
             return false;
         }
     }
+
+    public function offBoardingUpdate($userEmail, $link)
+    {
+        $email = new Email();
+        $email->transport('gmail')
+        ->from(['osh.committee@cloudstaff.com' => 'OffBoarding System'])
+        ->to($userEmail)
+        ->subject('Staff Offboarding')
+        ->emailFormat('html');
+
+        $email->viewVars([
+            'user_email' => $userEmail,
+            'link' => $link
+        ])->template('update');
+
+        if ($email->send()) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 }
